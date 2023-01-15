@@ -20,7 +20,8 @@ public class YoutubeTests {
     @Test
     public void testgGetYoutubePlayList(){
         YoutubeDataV3Client client = new YoutubeDataV3Client(apiConfig);
-        SearchListResponse res = client.getYoutubePlayList("자바 Spring");
+        SearchListResponse res = client.getYoutubePlayList("자바");
+
 
         assertThat(res != null);
     }
