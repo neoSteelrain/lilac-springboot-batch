@@ -10,6 +10,7 @@ import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 
 import java.io.IOException;
+import java.util.List;
 
 public class YoutubeDataV3Client implements IYoutubeClient{
 
@@ -45,7 +46,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         SearchListResponse response = null;
         try{
             // 유튜브 DATA V3 API 객체 생성
-            // YouTube youtube = new YouTube.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance(), new HttpRequestInitializer() {
             YouTube youtube = new YouTube.Builder(new NetHttpTransport(), new JacksonFactory(), new HttpRequestInitializer() {
                 public void initialize(HttpRequest request) throws IOException {
                 }
@@ -55,7 +55,8 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             YouTube.Search.List search = youtube.search().list("id,snippet");
             search.setKey(m_apiConfig.getYoutubeKey());
             search.setQ(keyword);
-            search.setType("video");
+            //search.setType("video,channel,playlist");
+            search.setType("playlist,video");
             search.setMaxResults(50L); // API 1 call 당 최대로 가져올 수 있는 영상의 갯수는 50개
             search.setOrder("viewCount");
             search.setVideoDefinition("high");
@@ -63,10 +64,14 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
 
             // 응답필드 설정
-            search.setFields("items(id/kind,id/videoId,id/playlistId,snippet/title,snippet/thumbnails/high/url,snippet/publishedAt,snippet/channelId,snippet/description,snippet/channelTitle)");
+            //search.setFields("items(id/kind,id/videoId,snippet/title,snippet/thumbnails/default/url)");
+            //search.setFields("items(id/kind,id/videoId,id/playlistId,snippet/title,snippet/thumbnails/high/url,snippet/publishedAt,snippet/description)");
+            //search.setFields("items(id/kind,id/videoId,snippet/title,snippet/thumbnails/default/url)");
+            //search.setFields("items(id/kind,id/videoId,id/playlistId,id/channelId,snippet/thumbnails/high/url,snippet/title/publishedAt/description/channelTitle)");
             response = search.execute(); // 유튜브 DATA V3 API 호출
-
-
+            /*System.out.println("========================");
+            search.getLastResponseHeaders().values().stream().forEach(obj -> System.out.println(obj.toString()));
+            System.out.println("========================");*/
         }catch(Exception e){
             throw new LilacYoutubeAPIException("유튜브 API호출 도중 예외 발생", e);
         }

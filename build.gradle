@@ -35,9 +35,13 @@ dependencies {
     // https://mvnrepository.com/artifact/com.google.api-client/google-api-client-jackson2
     implementation group: 'com.google.api-client', name: 'google-api-client-jackson2', version: '1.25.0'
 
-   /* compile 'com.google.api-client:google-api-client:1.25.0'
-    //compile 'com.google.oauth-client:google-oauth-client-jetty:1.23.0'
-    compile 'com.google.apis:google-api-services-youtube:v3-rev222-1.25.0'*/
+    // https://mvnrepository.com/artifact/com.google.api-client/google-api-client
+    implementation group: 'com.google.api-client', name: 'google-api-client', version: '1.25.0'
+
+
+    /* compile 'com.google.api-client:google-api-client:1.25.0'
+     //compile 'com.google.oauth-client:google-oauth-client-jetty:1.23.0'
+     compile 'com.google.apis:google-api-services-youtube:v3-rev222-1.25.0'*/
 
 
     // 유튜브 Data v3 API 의존성 추가 끝
