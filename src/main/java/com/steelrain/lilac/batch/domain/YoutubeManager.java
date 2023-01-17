@@ -39,6 +39,7 @@ public class YoutubeManager {
         this.m_apiConfig = apiConfig;
     }
 
+
     /*public void dispatchYoutube(){
         List<KeywordSubjectDTO> subjectList = getSubjectList();
         List<KeywordLicenseDTO> licenseList = getLicenseList();
@@ -67,8 +68,8 @@ public class YoutubeManager {
     }*/
 
     public void dispatchYoutube(){
-        List<KeywordSubjectDTO> subjectList = getSubjectList();
-        List<KeywordLicenseDTO> licenseList = getLicenseList();
+//        List<KeywordSubjectDTO> subjectList = getSubjectList();
+//        List<KeywordLicenseDTO> licenseList = getLicenseList();
         
         // 정보처리기사 로 테스트
         String keyword = "정보처리기사";

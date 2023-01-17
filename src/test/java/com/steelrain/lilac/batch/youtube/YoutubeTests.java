@@ -17,14 +17,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 
-@SpringBootTest
+
+
 public class YoutubeTests {
 
     @Autowired
     private APIConfig apiConfig;
 
 
-    /*@Test
+    @Test
     public void testGetYoutubePlayList(){
         IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
         SearchListResponse res = youtubeClient.getYoutubePlayList("정보처리기사");
@@ -33,7 +34,7 @@ public class YoutubeTests {
 
         testTEEEE(res);
         //searchListResponseToJsonFile(res);
-    }*/
+    }
 
     /*@Test
     public void testGetYoutubePlayListByMock(){
@@ -94,18 +95,4 @@ public class YoutubeTests {
             e.printStackTrace();
         }
     }
-
-   /* @Test
-    public void YYYYYYYY(){
-        String tmp = null;
-        try {
-            tmp = FileCopyUtils.copyToString(new FileReader("C:\\lilac-youtube_jsons\\SearchListResponse.json"));
-
-            SearchListResponse res = JacksonFactory.getDefaultInstance().fromString(tmp, SearchListResponse.class);
-            System.out.println("res.toPrettyString() : " + res.toPrettyString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println(tmp);
-    }*/
 }

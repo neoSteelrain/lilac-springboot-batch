@@ -58,24 +58,31 @@ public class YoutubeVideoDTO {
     private Double score;
     private Double magnitude;
 
+    // 영상정보의 값이 일정하게 넘어오지 않는다. 때때로 속성값이 있거나 없거나(null) 일정하게 넘어오지 않는다.
     public static Optional<YoutubeVideoDTO> convertYoutubeVideoDTO(PlaylistItem item, VideoListResponse videoInfo){
-        if(videoInfo.getItems() == null || videoInfo.getItems().size() == 0)
-        {
-            return Optional.empty();
+        if(item.getSnippet() == null || item.getContentDetails() == null){
+           return Optional.empty();
         }
 
+        if(videoInfo.getItems() == null || videoInfo.getItems().size() == 0) {
+            return Optional.empty();
+        }
         Video video = videoInfo.getItems().get(0);
+        if(video.getStatistics() == null || video.getSnippet() == null || video.getContentDetails() == null){
+            return Optional.empty();
+        }
 
         YoutubeVideoDTO dto = new YoutubeVideoDTO();
         dto.setVideoId(item.getContentDetails().getVideoId());
         dto.setTitle(item.getSnippet().getTitle());
-        dto.setDesc(video.getSnippet().getDescription());
+        dto.setPlaylistId(item.getSnippet().getPlaylistId());
         dto.setPublishDate(new Timestamp(item.getContentDetails().getVideoPublishedAt().getValue()));
         dto.setThumbnailMedium(item.getSnippet().getThumbnails().getMedium().getUrl());
         dto.setThumbnailHigh(item.getSnippet().getThumbnails().getHigh().getUrl());
-        dto.setViewCount(video.getStatistics().getViewCount().longValue());
-        dto.setPlaylistId(item.getSnippet().getPlaylistId());
-        dto.setLikeCount(video.getStatistics().getLikeCount().longValue());
+
+        dto.setViewCount(video.getStatistics().getViewCount() == null ? 0 : video.getStatistics().getViewCount().longValue());
+        dto.setDesc(video.getSnippet().getDescription());
+        dto.setLikeCount(video.getStatistics().getLikeCount() == null ? 0 : video.getStatistics().getLikeCount().longValue());
         dto.setDuration(video.getContentDetails().getDuration());
 
         return Optional.of(dto);
