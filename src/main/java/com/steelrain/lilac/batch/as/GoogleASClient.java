@@ -2,7 +2,9 @@ package com.steelrain.lilac.batch.as;
 
 import com.google.cloud.language.v1.Document;
 import com.google.cloud.language.v1.LanguageServiceClient;
+import com.google.cloud.language.v1.LanguageServiceSettings;
 import com.google.cloud.language.v1.Sentiment;
+import com.google.protobuf.ByteString;
 import com.steelrain.lilac.batch.datamodel.SentimentDTO;
 import com.steelrain.lilac.batch.exception.LilacGoogleASException;
 import org.springframework.stereotype.Component;
@@ -20,18 +22,18 @@ import java.nio.charset.StandardCharsets;
 public class GoogleASClient implements ISentimentClient {
 
     @Override
-    public SentimentDTO analyizeComment(String comment) {
-        if(!StringUtils.hasText(comment) && (comment.getBytes(StandardCharsets.UTF_8).length <= 1000 )){
+    public SentimentDTO analyizeComment(String str) {
+        if(StringUtils.hasText(str) && (str.getBytes(StandardCharsets.UTF_8).length >= 1000 )){
             return null;
         }
 
         SentimentDTO result = null;
         try(LanguageServiceClient client = LanguageServiceClient.create()){
-            Document doc = Document.newBuilder().setContent(comment).setType(Document.Type.PLAIN_TEXT).setLanguage("ko").build();
+            Document doc = Document.newBuilder().setContent(str).setType(Document.Type.PLAIN_TEXT).setLanguage("ko").build();
             Sentiment sentiment = client.analyzeSentiment(doc).getDocumentSentiment();
             result = new SentimentDTO(sentiment.getScore(), sentiment.getMagnitude());
         }catch (IOException ioe){
-            throw new LilacGoogleASException("구글 감정분석 API 호출도중 예외", ioe, comment);
+            throw new LilacGoogleASException("구글 감정분석 API 호출도중 예외", ioe, str);
         }
         return result;
     }

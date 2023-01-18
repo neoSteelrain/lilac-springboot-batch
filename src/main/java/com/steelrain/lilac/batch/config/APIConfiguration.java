@@ -13,6 +13,9 @@ public class APIConfiguration {
     @Value("${youtube.api.key}")
     private String m_youtubeKey;
 
+    @Value("${sentiment.threshold}")
+    private String m_threshold;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
         return new PropertySourcesPlaceholderConfigurer();
@@ -20,6 +23,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey);
+        return new APIConfig(this.m_youtubeKey, m_threshold);
     }
 }

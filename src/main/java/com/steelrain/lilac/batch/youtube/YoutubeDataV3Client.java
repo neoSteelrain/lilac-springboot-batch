@@ -34,7 +34,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
     @Override
     public List<YoutubePlayListDTO> getYoutubePlayListDTO(String keyword) {
-        if(StringUtils.hasText(keyword)){
+        if(!StringUtils.hasText(keyword)){
             return new ArrayList<>(0);
         }
 
@@ -193,7 +193,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
     // 영상의 상제정보의 유효성 체크, null 이면 true 아니면 false
     private boolean isNullableVideoListResponse(VideoListResponse videoInfo){
-        if(videoInfo.getItems() == null && videoInfo.getItems().size() == 0) {
+        if(videoInfo.getItems() != null && videoInfo.getItems().size() == 0) {
             return true;
         }
         Video video = videoInfo.getItems().get(0); // 영상의 상세정보는 List 형식이지만 실제로는 1개만 반환하기 때문에 0번째 요소만 가져와도 된다.
@@ -210,7 +210,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
     // 유튜브 영상의 상세정보를 반환한다
     private VideoListResponse getVideoDetail(String videoId){
-        // JhKOsZuMDWs
+        // 테스트용 영상id : JhKOsZuMDWs
         try {
             YouTube youTubeObj = getYoutubeObject();
             YouTube.Videos.List request = youTubeObj.videos()

@@ -7,7 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 public class APIConfig {
     private String youtubeKey;
 
-    public APIConfig(String youtubeKey){
+    // 감정분석의 긍정점수(score)값의 임계치
+    private float threshold;
+
+    public APIConfig(String youtubeKey, String threshold){
         this.youtubeKey = youtubeKey;
+        this.threshold = Float.valueOf(threshold);
     }
 }
