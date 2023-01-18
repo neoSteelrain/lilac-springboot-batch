@@ -2,6 +2,7 @@ package com.steelrain.lilac.batch.youtube;
 
 import com.google.api.services.youtube.model.PlaylistItemListResponse;
 import com.google.api.services.youtube.model.SearchListResponse;
+import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 
@@ -13,4 +14,6 @@ public interface IYoutubeClient {
     List<YoutubePlayListDTO> getYoutubePlayListDTO(String keyword);
     //PlaylistItemListResponse getVideoListByPlayListId(String playListId);
     List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId);
+
+    List<YoutubeCommentDTO> getCommentList(String videoId);
 }

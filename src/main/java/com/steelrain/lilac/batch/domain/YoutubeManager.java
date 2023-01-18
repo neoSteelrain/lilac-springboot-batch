@@ -1,10 +1,8 @@
 package com.steelrain.lilac.batch.domain;
 
+import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
-import com.steelrain.lilac.batch.datamodel.KeywordLicenseDTO;
-import com.steelrain.lilac.batch.datamodel.KeywordSubjectDTO;
-import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
-import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
+import com.steelrain.lilac.batch.datamodel.*;
 import com.steelrain.lilac.batch.mapper.KeywordMapper;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import com.steelrain.lilac.batch.youtube.YoutubeDataV3Client;
@@ -32,11 +30,13 @@ import java.util.List;
 public class YoutubeManager {
 
     private final KeywordMapper m_subjectMapper;
-    private final APIConfig m_apiConfig;
+    private final IYoutubeClient m_youYoutubeClient;
+    private final ISentimentClient m_sentimentClient;
 
-    public YoutubeManager(KeywordMapper subjectMapper, APIConfig apiConfig){
+    public YoutubeManager(KeywordMapper subjectMapper, IYoutubeClient youtubeClient, ISentimentClient sentimentClient){
         this.m_subjectMapper = subjectMapper;
-        this.m_apiConfig = apiConfig;
+        this.m_youYoutubeClient = youtubeClient;
+        this.m_sentimentClient = sentimentClient;
     }
 
 
@@ -68,23 +68,44 @@ public class YoutubeManager {
     }*/
 
     public void dispatchYoutube(){
-//        List<KeywordSubjectDTO> subjectList = getSubjectList();
-//        List<KeywordLicenseDTO> licenseList = getLicenseList();
-        
-        // 정보처리기사 로 테스트
+        List<KeywordSubjectDTO> subjectList = getSubjectList();
+        List<KeywordLicenseDTO> licenseList = getLicenseList();
+
+        // "정보처리기사" 키워드로 테스트
         String keyword = "정보처리기사";
-        IYoutubeClient youtubeClient = new YoutubeDataV3Client(m_apiConfig);
-        List<YoutubePlayListDTO> playListDTOS = youtubeClient.getYoutubePlayListDTO(keyword);
+        List<YoutubePlayListDTO> playListDTOS = m_youYoutubeClient.getYoutubePlayListDTO(keyword);
+        List<YoutubeVideoDTO> videoDTOList = null;
         for(YoutubePlayListDTO dto : playListDTOS){
             // 재생목록에 있는 모든 영상을 가져온다.
-            List<YoutubeVideoDTO> videoDTOList = youtubeClient.getVideoDTOListByPlayListId(dto.playListId);
-            videoDTOList.stream().forEach(video ->{
+            videoDTOList = m_youYoutubeClient.getVideoDTOListByPlayListId(dto.playListId);
+            /*videoDTOList.stream().forEach(video ->{
                 System.out.println("================================================");
                 System.out.println("video.toString() : " + video.toString());
                 System.out.println("================================================");
-            });
+            });*/
+
         }
     }
+
+    // 영상들의 댓글리스트를 가져오고 감정분석을 한다.
+    private void getCommentList(List<YoutubeVideoDTO> videos){
+        for(YoutubeVideoDTO video : videos){
+            List<YoutubeCommentDTO> comments = m_youYoutubeClient.getCommentList(video.getVideoId());
+            analyzeComment(comments);
+        }
+    }
+
+    private void analyzeComment(List<YoutubeCommentDTO> comments){
+        for(YoutubeCommentDTO comment : comments){
+            StringBuilder sb = new StringBuilder();
+            SentimentDTO sentimentDTO = m_sentimentClient.analyizeComment(comment.getTextOriginal());
+            if(sentimentDTO.getScore() >= 0.3){
+
+            }
+        }
+    }
+
+
 
 
     // 미리등록된 검색키워드를 목록으로 가져온다.

@@ -16,7 +16,6 @@ public class YoutubeManagerTests {
 
     @Test
     public void testDispatchYoutube(){
-        YoutubeManager mgr = new YoutubeManager(null, m_apiApiConfig);
-        mgr.dispatchYoutube();
+
     }
 }

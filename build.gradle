@@ -28,24 +28,19 @@ dependencies {
     // 유튜브 Data v3 API 의존성 추가 시작
     // https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube
     implementation group: 'com.google.apis', name: 'google-api-services-youtube', version: 'v3-rev222-1.25.0'
-
     // https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson2
     implementation group: 'com.google.http-client', name: 'google-http-client-jackson2', version: '1.25.0'
-
     // https://mvnrepository.com/artifact/com.google.api-client/google-api-client-jackson2
     implementation group: 'com.google.api-client', name: 'google-api-client-jackson2', version: '1.25.0'
-
     // https://mvnrepository.com/artifact/com.google.api-client/google-api-client
     implementation group: 'com.google.api-client', name: 'google-api-client', version: '1.25.0'
-
-
-    /* compile 'com.google.api-client:google-api-client:1.25.0'
-     //compile 'com.google.oauth-client:google-oauth-client-jetty:1.23.0'
-     compile 'com.google.apis:google-api-services-youtube:v3-rev222-1.25.0'*/
-
-
     // 유튜브 Data v3 API 의존성 추가 끝
 
+    // 구글 감정분석 API 의존성 추가 시작
+    implementation platform('com.google.cloud:libraries-bom:26.1.4')
+    implementation 'com.google.cloud:google-cloud-language'
+    // 구글 감정분석 API 의존성 추가 끝
+    
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0'
     compileOnly 'org.projectlombok:lombok'

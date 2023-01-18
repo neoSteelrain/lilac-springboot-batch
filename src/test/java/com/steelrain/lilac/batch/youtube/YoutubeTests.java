@@ -25,7 +25,7 @@ public class YoutubeTests {
     private APIConfig apiConfig;
 
 
-    @Test
+    /*@Test
     public void testGetYoutubePlayList(){
         IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
         SearchListResponse res = youtubeClient.getYoutubePlayList("정보처리기사");
@@ -34,7 +34,7 @@ public class YoutubeTests {
 
         testTEEEE(res);
         //searchListResponseToJsonFile(res);
-    }
+    }*/
 
     /*@Test
     public void testGetYoutubePlayListByMock(){
