@@ -119,8 +119,15 @@ public class YoutubeManager {
             for(YoutubeVideoDTO video : playlist.getVideos()){
                 video.setYoutubePlaylistId(playlist.getId());
                 video.setChannelId(channelDTO.getId());
-                // TODO : 영상정보 insert 해야 한다.
-
+            }
+            // TODO : 영상정보 insert 해야 한다.
+            m_youtubeRepository.saveVideoList(playlist.getVideos());
+            for(YoutubeVideoDTO video : playlist.getVideos()){
+                for(YoutubeCommentDTO dto : video.getComments()) {
+                    dto.setYoutubeId(video.getId());
+                    dto.setChannelId(channelDTO.getId());
+                }
+                m_youtubeRepository.saveCommentList(video.getComments());
             }
         }
     }

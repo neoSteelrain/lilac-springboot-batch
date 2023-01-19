@@ -1,6 +1,7 @@
 package com.steelrain.lilac.batch.youtube;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -133,6 +134,10 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 if(isNullableVideoListResponse(videoListResponse)){
                     continue;
                 }
+
+                if(YoutubeVideoDTO.convertYoutubeVideoDTO(item, videoListResponse.getItems().get(0)) == null){
+                    continue;
+                }
                 resultList.add(YoutubeVideoDTO.convertYoutubeVideoDTO(item, videoListResponse.getItems().get(0)));
             }
         } catch (IOException | GeneralSecurityException e) {
@@ -154,7 +159,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             YouTube.CommentThreads.List request = youTube.commentThreads()
                     .list("snippet,replies");
             CommentThreadListResponse apiResponse = request.setKey(m_apiConfig.getYoutubeKey())
-                    .setMaxResults(100L)
+                    .setMaxResults(10L)
                     .setTextFormat("plainText")
                     .setVideoId(videoId)
                     .execute();
@@ -181,8 +186,10 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                                                         .build();
                 commentList.add(dto);
             }
+        }catch(GoogleJsonResponseException ge){
+            throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외 - 댓글금지영상" + " : videoId - " + videoId, ge, videoId);
         } catch (IOException | GeneralSecurityException e) {
-            throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외", e, videoId);
+            throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외" + " : videoId - " + videoId, e, videoId);
         }
         return commentList;
     }
@@ -238,8 +245,21 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         if(videoInfo.getItems() != null && videoInfo.getItems().size() == 0) {
             return true;
         }
+
+//        if(videoInfo.getStatistics().getCommentCount() == null){
+//            return null;
+//        }
+
         Video video = videoInfo.getItems().get(0); // 영상의 상세정보는 List 형식이지만 실제로는 1개만 반환하기 때문에 0번째 요소만 가져와도 된다.
-        return video.getStatistics() == null || video.getSnippet() == null || video.getContentDetails() == null;
+
+        // 댓글금지 영상을 체크하는 부분
+        if(video.getStatistics() == null){
+            return true;
+        }else{
+            if(video.getStatistics().getCommentCount() == null)
+                return true;
+        }
+        return video.getSnippet() == null || video.getContentDetails()  == null;
     }
 
     // 유튜브API의 클라이언트 객체를 반환한다

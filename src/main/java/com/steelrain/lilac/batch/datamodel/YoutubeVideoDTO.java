@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -71,7 +72,11 @@ public class YoutubeVideoDTO {
         dto.setViewCount(videoInfo.getStatistics().getViewCount() == null ? 0 : videoInfo.getStatistics().getViewCount().longValue());
         dto.setDesc(videoInfo.getSnippet().getDescription());
         dto.setLikeCount(videoInfo.getStatistics().getLikeCount() == null ? 0 : videoInfo.getStatistics().getLikeCount().longValue());
-        dto.setCommentCount(videoInfo.getStatistics().getCommentCount() == null ? 0 : videoInfo.getStatistics().getCommentCount().longValue());
+
+//        if(videoInfo.getStatistics().getCommentCount() == null){
+//            return null;
+//        }
+        dto.setCommentCount(videoInfo.getStatistics().getCommentCount().longValue());
         dto.setDuration(videoInfo.getContentDetails().getDuration());
 
         return dto;

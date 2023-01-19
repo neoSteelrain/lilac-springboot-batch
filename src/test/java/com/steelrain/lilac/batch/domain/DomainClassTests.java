@@ -43,7 +43,5 @@ public class DomainClassTests {
     @Transactional
     public void testDispatchYoutube(){
         m_youtubeManager.dispatchYoutube();
-
-
     }
 }
