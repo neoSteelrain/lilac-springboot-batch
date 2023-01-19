@@ -2,7 +2,9 @@ package com.steelrain.lilac.batch.repository;
 
 
 import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
+import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
+import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +45,33 @@ public class YoutubeMyBatisRepositoryTests {
     }
 
     @Test
-    @Transactional
+    public void testSaveVideoList(){
+        List<YoutubeVideoDTO> list = new ArrayList<>();
+        YoutubeVideoDTO dto = new YoutubeVideoDTO();
+        dto.setChannelId(1L);
+        dto.setYoutubePlaylistId(1L);
+        dto.setVideoId("vvvvvvvvvv");
+        dto.setTitle("tttttttttt");
+        dto.setDesc("dddddddddddddd");
+        dto.setPublishDate(new Timestamp(System.currentTimeMillis()));
+        dto.setThumbnailMedium("mmmmmmmmmmm");
+        dto.setThumbnailHigh("hhhhhhhhhhhhh");
+        dto.setViewCount(333333L);
+        dto.setSearchCount(444444);
+        dto.setPlaylistId("ppppppppppp");
+        dto.setLikeCount(55555L);
+        dto.setFavoriteCount(6666L);
+        dto.setCommentCount(77777L);
+        dto.setDuration("ddddd");
+        dto.setScore(0.2f);
+        dto.setMagnitude(1.2f);
+        list.add(dto);
+        int cnt = m_youtubeRepository.saveVideoList(list);
+        assertThat(cnt > 0);
+    }
+
+    @Test
+    //@Transactional
     public void testSaveChannelInfo(){
         YoutubeChannelDTO dto = YoutubeChannelDTO.builder()
                 .channelId("iiiiiiiii")
@@ -59,6 +87,27 @@ public class YoutubeMyBatisRepositoryTests {
                 .thumbnailHigh("hhhhhhhhhhhh")
                 .build();
         int cnt = m_youtubeRepository.saveChannelInfo(dto);
+        assertThat(cnt > 0);
+    }
+
+    @Test
+    public void testSaveCommentList(){
+        YoutubeCommentDTO dto = YoutubeCommentDTO.builder()
+                .commentId("ccccccc")
+                .totalReplyCount(11L)
+                .authorDisplayName("aaaaaaaa")
+                .textOriginal("ttttttttt")
+                .textDisplay("dddddddddd")
+                .publishDate(new Timestamp(System.currentTimeMillis()))
+                .updateDate(new Timestamp(System.currentTimeMillis()))
+                .replyCount(22)
+                .parentId("ppppppp")
+                .channelId(1L)
+                .youtubeId(2L)
+                .build();
+        List<YoutubeCommentDTO> list = new ArrayList<>();
+        list.add(dto);
+        int cnt = m_youtubeRepository.saveCommentList(list);
         assertThat(cnt > 0);
     }
 

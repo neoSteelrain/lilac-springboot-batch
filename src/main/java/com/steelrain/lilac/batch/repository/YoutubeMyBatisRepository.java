@@ -1,6 +1,7 @@
 package com.steelrain.lilac.batch.repository;
 
 import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
+import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import com.steelrain.lilac.batch.mapper.YoutubeMapper;
@@ -32,7 +33,11 @@ public class YoutubeMyBatisRepository implements IYoutubeRepository {
 
     @Override
     public int saveVideoList(List<YoutubeVideoDTO> videoList) {
+        return m_youtubeMapper.insertYoutubeVideoList(videoList);
+    }
 
-        return 0;
+    @Override
+    public int saveCommentList(List<YoutubeCommentDTO> commentList) {
+        return m_youtubeMapper.insertYoutubeCommentList(commentList);
     }
 }

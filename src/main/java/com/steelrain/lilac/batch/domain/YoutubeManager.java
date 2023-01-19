@@ -111,7 +111,7 @@ public class YoutubeManager {
             playlist.setVideos(videos);
         }
 
-        // TODO : 재생목록, 영상목록, 댓글목록, 채널정보를 DB에 저장해야 한다.
+        // TODO : 재생목록, 채널정보, 영상목록, 댓글목록를 DB에 저장해야 한다.
         // insert 순서 : 재생목록, 채널정보, 유튜브영상, 댓글
         m_youtubeRepository.savePlayList(playLists);
         m_youtubeRepository.saveChannelInfo(channelDTO);
@@ -120,6 +120,7 @@ public class YoutubeManager {
                 video.setYoutubePlaylistId(playlist.getId());
                 video.setChannelId(channelDTO.getId());
                 // TODO : 영상정보 insert 해야 한다.
+
             }
         }
     }
