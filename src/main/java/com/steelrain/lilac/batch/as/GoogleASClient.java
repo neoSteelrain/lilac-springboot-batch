@@ -27,11 +27,13 @@ public class GoogleASClient implements ISentimentClient {
             return null;
         }
 
+        //LanguageServiceSettings settings = LanguageServiceSettings.newBuilder().
         SentimentDTO result = null;
         try(LanguageServiceClient client = LanguageServiceClient.create()){
             Document doc = Document.newBuilder().setContent(str).setType(Document.Type.PLAIN_TEXT).setLanguage("ko").build();
             Sentiment sentiment = client.analyzeSentiment(doc).getDocumentSentiment();
             result = new SentimentDTO(sentiment.getScore(), sentiment.getMagnitude());
+
         }catch (IOException ioe){
             throw new LilacGoogleASException("구글 감정분석 API 호출도중 예외", ioe, str);
         }

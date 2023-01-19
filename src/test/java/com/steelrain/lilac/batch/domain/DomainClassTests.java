@@ -4,6 +4,7 @@ import com.steelrain.lilac.batch.config.APIConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import static org.assertj.core.api.Assertions.*;
@@ -16,9 +17,12 @@ public class DomainClassTests {
     @Autowired
     private APIConfig m_apiApiConfig;
 
-    @Test
-    public void testDispatchYoutube(){
+    @Autowired
+    private YoutubeManager m_youtubeManager;
 
+    @Test
+    public void testYoutubeManager(){
+        m_youtubeManager.dispatchYoutube();
     }
 
     @Test
@@ -33,5 +37,13 @@ public class DomainClassTests {
         assertThat(StringUtils.hasText(tmp));
 
         System.out.println("tmp : " + tmp);
+    }
+
+    @Test
+    @Transactional
+    public void testDispatchYoutube(){
+        m_youtubeManager.dispatchYoutube();
+
+
     }
 }

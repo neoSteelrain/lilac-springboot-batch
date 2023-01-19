@@ -4,8 +4,8 @@ import com.google.api.services.youtube.model.SearchResult;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
 import java.sql.Timestamp;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,17 +24,22 @@ item_count	int	YES
     public String playListId;
     private String title;
     private Timestamp publishDate;
-    private String thumbnail_medium;
-    private String thumbnail_high;
+    private String thumbnailMedium;
+    private String thumbnailHigh;
     private Integer itemCount;
+
+    private String channelId;
+
+    private List<YoutubeVideoDTO> videos;
 
     public static YoutubePlayListDTO convertToYoutubePlayListDTO(SearchResult sr){
         YoutubePlayListDTO dto = new YoutubePlayListDTO();
         dto.setPlayListId(sr.getId().getPlaylistId());
         dto.setTitle(sr.getSnippet().getTitle());
         dto.setPublishDate(new Timestamp(sr.getSnippet().getPublishedAt().getValue()));
-        dto.setThumbnail_medium(sr.getSnippet().getThumbnails().getMedium().getUrl());
-        dto.setThumbnail_high(sr.getSnippet().getThumbnails().getHigh().getUrl());
+        dto.setThumbnailMedium(sr.getSnippet().getThumbnails().getMedium().getUrl());
+        dto.setThumbnailHigh(sr.getSnippet().getThumbnails().getHigh().getUrl());
+        dto.setChannelId(sr.getSnippet().getChannelId());
         // itemCount는 재생목록의 영상들을 가져와야 알 수 있음.
         return dto;
     }

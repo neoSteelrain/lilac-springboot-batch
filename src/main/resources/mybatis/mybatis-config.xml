@@ -7,5 +7,8 @@
     </settings>
     <typeAliases>
 <!--        <typeAlias type="com.its.member.datamodel.MemberDTO" alias="member"></typeAlias>-->
+        <typeAlias type="com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO" alias="PlayListDTO"></typeAlias>
+        <typeAlias type="com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO" alias="ChannelDTO"></typeAlias>
+        <typeAlias type="com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO" alias="VideoDTO"></typeAlias>
     </typeAliases>
 </configuration>

@@ -12,6 +12,6 @@ public class APIConfig {
 
     public APIConfig(String youtubeKey, String threshold){
         this.youtubeKey = youtubeKey;
-        this.threshold = Float.valueOf(threshold);
+        this.threshold = Float.valueOf(threshold).floatValue();
     }
 }

@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="Youtube">
+<mapper namespace="com.steelrain.lilac.batch.mapper.YoutubeMapper">
+    <insert id="insertYoutubePlaylist" useGeneratedKeys="true" keyProperty="id" parameterType="PlayListDTO">
+        INSERT INTO tbl_youtube_playlist(playlist_id, title, publish_date, thumbnail_medium, thumbnail_high, item_count) VALUES
+        <foreach item="item" collection="list" separator=",">
+            (#{item.playListId}, #{item.title}, #{item.publishDate}, #{item.thumbnailMedium}, #{item.thumbnailHigh}, #{item.itemCount})
+        </foreach>
+    </insert>
 
+    <insert id="insertYoutubeChannelInfo" useGeneratedKeys="true" keyProperty="id" parameterType="ChannelDTO">
+        INSERT INTO tbl_youtube_channel(channel_id, title, description, publish_date, view_count, subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high) VALUES
+            (#{channelId}, #{title}, #{description}, #{publishDate}, #{viewCount}, #{subscriberCount}, #{subscriberCountHidden}, #{videoCount}, #{brandingKeywords}, #{thumbnailMedium}, #{thumbnailHigh})
+    </insert>
+
+    <insert id="insertYoutubeVideoList" useGeneratedKeys="true" keyProperty="id" parameterType="VideoDTO">
+        INSERT INTO tbl_youtube(channel_id, youtube_playlist_id, video_id, title, description,
+                                publish_date, fetch_date, thumbnail_medium, thumbnail_high, view_count,
+                                search_count, playlist_id, like_count, favorite_count, comment_count, duration, score, magnitude) VALUES
+            (#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{},#{})
+    </insert>
 </mapper>

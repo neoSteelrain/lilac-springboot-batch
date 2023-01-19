@@ -4,12 +4,14 @@ import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.*;
 import com.steelrain.lilac.batch.mapper.KeywordMapper;
+import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import com.steelrain.lilac.batch.youtube.YoutubeDataV3Client;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * 유튜브 배치작업의 퍼사드
@@ -27,25 +29,29 @@ import java.util.List;
  * 3. 영상정보
  * 4. 코멘트정보
  */
+@Slf4j
 @Component
 public class YoutubeManager {
 
     private final KeywordMapper m_subjectMapper;
-    private final IYoutubeClient m_youYoutubeClient;
+    private final IYoutubeClient m_youtubeClient;
     private final ISentimentClient m_sentimentClient;
     private final APIConfig m_apiConfig;
     private final CommentByteCounter m_commentByteCounter;
+    private final IYoutubeRepository m_youtubeRepository;
 
     public YoutubeManager(KeywordMapper subjectMapper,
                           IYoutubeClient youtubeClient,
                           ISentimentClient sentimentClient,
                           APIConfig apiConfig,
-                          CommentByteCounter commentByteCounter){
+                          CommentByteCounter commentByteCounter,
+                          IYoutubeRepository repository){
         this.m_subjectMapper = subjectMapper;
-        this.m_youYoutubeClient = youtubeClient;
+        this.m_youtubeClient = youtubeClient;
         this.m_sentimentClient = sentimentClient;
         this.m_apiConfig = apiConfig;
         this.m_commentByteCounter = commentByteCounter;
+        this.m_youtubeRepository = repository;
     }
 
 
@@ -76,38 +82,110 @@ public class YoutubeManager {
         }
     }*/
 
+    @Transactional
     public void dispatchYoutube(){
         List<KeywordSubjectDTO> subjectList = getSubjectList();
         List<KeywordLicenseDTO> licenseList = getLicenseList();
 
         // "정보처리기사" 키워드로 테스트
         String keyword = "정보처리기사";
-        List<YoutubePlayListDTO> playListDTOS = m_youYoutubeClient.getYoutubePlayListDTO(keyword);
-        for(YoutubePlayListDTO dto : playListDTOS){
-            // 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러서 새로운 영상리스트를 만든다.
-            List<YoutubeVideoDTO> filteredVideos = filterVideoList(m_youYoutubeClient.getVideoDTOListByPlayListId(dto.playListId));
-            // TODO : 걸러진 영상리스트 및 재생목록정보를 DB에 넣는다.
+        List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
 
+        YoutubeChannelDTO channelDTO = null;
+        if(playLists != null && playLists.size() >= 1){
+            channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
+        }
+
+        Iterator<YoutubePlayListDTO> iter = playLists.iterator();
+        while(iter.hasNext()){
+           // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
+           // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
+            YoutubePlayListDTO playlist = iter.next();
+            List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
+            if(hasNagativeCommentAndLinkComments(videos)){
+                iter.remove();
+                continue;
+            }
+
+            playlist.setItemCount(videos.size());
+            playlist.setVideos(videos);
+        }
+
+        // TODO : 재생목록, 영상목록, 댓글목록, 채널정보를 DB에 저장해야 한다.
+        // insert 순서 : 재생목록, 채널정보, 유튜브영상, 댓글
+        m_youtubeRepository.savePlayList(playLists);
+        m_youtubeRepository.saveChannelInfo(channelDTO);
+        for(YoutubePlayListDTO playlist : playLists){
+            for(YoutubeVideoDTO video : playlist.getVideos()){
+                video.setYoutubePlaylistId(playlist.getId());
+                video.setChannelId(channelDTO.getId());
+                // TODO : 영상정보 insert 해야 한다.
+            }
         }
     }
 
-    // 영상들의 댓글리스트를 가져오고 감정분석을 하여 긍정수치가 임계치를 넘은 댓글을 가진 유튜브영상들의 리스트를 새로만들어 반환한다.
-    private List<YoutubeVideoDTO> filterVideoList(List<YoutubeVideoDTO> videos){
+    // 영상들의 댓글리스트를 가져오고 감정분석을 하여 긍정수치가 부정적인 댓글을 가진 유튜브영상들의 리스트를 새로만들어서 반환
+    private List<YoutubeVideoDTO> filterVideoListAndNewList(List<YoutubeVideoDTO> videos){
         List<YoutubeVideoDTO> resultList = new ArrayList<>(videos.size());
         for(YoutubeVideoDTO video : videos){
-            List<YoutubeCommentDTO> comments = m_youYoutubeClient.getCommentList(video.getVideoId());
-            if(analyzeComment(comments)){
+            List<YoutubeCommentDTO> comments = m_youtubeClient.getCommentList(video.getVideoId());
+            if(analyzeComment(comments, video)){
                 resultList.add(video);
             }
         }
         return resultList;
     }
 
-    // 댓글리스트의 댓글들을 1000바이트
-    private boolean analyzeComment(List<YoutubeCommentDTO> comments){
+    private List<YoutubeVideoDTO> filterVideoList(List<YoutubeVideoDTO> videos){
+        Iterator<YoutubeVideoDTO> iter = videos.iterator();
+        while(iter.hasNext()){
+            YoutubeVideoDTO video = iter.next();
+            List<YoutubeCommentDTO> comments = m_youtubeClient.getCommentList(video.getVideoId());
+            if(!analyzeComment(comments, video)){
+                iter.remove();
+            }
+        }
+        return videos;
+    }
+
+    /*
+        1. 각 영상의 댓글리스트을 가져온다
+        2. 부정적인 댓글이 있으면 바로 false리턴
+        3. 부정적이지 않은 댓글이 있는 영상에는 가져온 댓글리스트를 설정한다.
+     */
+    private boolean hasNagativeCommentAndLinkComments(List<YoutubeVideoDTO> videos){
+        for(YoutubeVideoDTO video : videos){
+            List<YoutubeCommentDTO> comments = m_youtubeClient.getCommentList(video.getVideoId());
+            if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴
+                return false;
+            }
+
+            video.setComments(comments);
+        }
+        return true;
+    }
+
+    /*
+     - 댓글리스트의 댓글들을 1000바이트까지만 모아서 감정분석을 하고 부정적인 댓글을 가진 영상이 있으면 true, 없으면 false
+     - 영상의 score, magnitude 속성을 감정분석 결과값으로 설정한다.
+     */
+    private boolean analyzeComment(List<YoutubeCommentDTO> comments, YoutubeVideoDTO video){
         String assembledComment = assembleComment(comments);
+
+        log.debug("video.getTitle() : " + video.getTitle());
+        log.debug("comments.size() : " + comments.size());
+        log.debug("assembledComment : " + assembledComment);
+
         SentimentDTO sentimentDTO = m_sentimentClient.analyizeComment(assembledComment);
-        return sentimentDTO == null ? false : sentimentDTO.getScore() >= m_apiConfig.getThreshold(); // 긍정수치가 임계치보다 높으면 true 아니면 false
+
+        log.debug("sentimentDTO.toString() : " + sentimentDTO.toString());
+
+        if(sentimentDTO.getScore() >= m_apiConfig.getThreshold()){ // 긍정수치가 임계치보다 높으면 유튜브영상에 감정수치를 입력한다.
+            video.setScore(Float.valueOf(sentimentDTO.getScore()));
+            video.setMagnitude(Float.valueOf(sentimentDTO.getMagnitude()));
+            return true;
+        }
+        return false;
     }
 
     // 댓글목록에서 댓글들을 더하여 1000바이트 댓글문자열을 만들어서 반환한다

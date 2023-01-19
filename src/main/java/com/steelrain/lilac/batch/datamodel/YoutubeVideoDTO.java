@@ -2,14 +2,12 @@ package com.steelrain.lilac.batch.datamodel;
 
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.Video;
-import com.google.api.services.youtube.model.VideoListResponse;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.util.Optional;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,7 +17,7 @@ public class YoutubeVideoDTO {
     id	bigint	NO	PRI
     channel_id	bigint	NO	MUL
     youtube_playlist_id	bigint	YES	MUL
-    video_id	varchar(30)	NO	UNI
+    video_id	varchar(50)	NO	UNI
     title	varchar(100)	NO	MUL
     desc	varchar(5000)	YES
     publish_date	datetime	YES
@@ -28,13 +26,13 @@ public class YoutubeVideoDTO {
     thumbnail_high	varchar(255)	YES
     view_count	bigint	YES
     search_count	int	YES
-    playlist_id	varchar(30)	YES
+    playlist_id	varchar(50)	YES
     like_count	bigint	YES
     favorite_count	bigint	YES
     comment_count	bigint	YES
     duration	varchar(40)	YES
-    score	double	YES
-    magnitude	double	YES
+    score	float	YES
+    magnitude	float	YES
      */
 
     private Long id;
@@ -55,8 +53,10 @@ public class YoutubeVideoDTO {
     private Long favoriteCount;
     private Long commentCount;
     private String duration;
-    private Double score;
-    private Double magnitude;
+    private Float score;
+    private Float magnitude;
+
+    private List<YoutubeCommentDTO> comments;
 
     // 영상정보의 값이 일정하게 넘어오지 않는다. 때때로 속성값이 있거나 없거나(null) 일정하게 넘어오지 않는다.
     public static YoutubeVideoDTO convertYoutubeVideoDTO(PlaylistItem item, Video videoInfo){
@@ -71,6 +71,7 @@ public class YoutubeVideoDTO {
         dto.setViewCount(videoInfo.getStatistics().getViewCount() == null ? 0 : videoInfo.getStatistics().getViewCount().longValue());
         dto.setDesc(videoInfo.getSnippet().getDescription());
         dto.setLikeCount(videoInfo.getStatistics().getLikeCount() == null ? 0 : videoInfo.getStatistics().getLikeCount().longValue());
+        dto.setCommentCount(videoInfo.getStatistics().getCommentCount() == null ? 0 : videoInfo.getStatistics().getCommentCount().longValue());
         dto.setDuration(videoInfo.getContentDetails().getDuration());
 
         return dto;

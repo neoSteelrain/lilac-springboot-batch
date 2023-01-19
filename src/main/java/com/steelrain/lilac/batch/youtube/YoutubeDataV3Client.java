@@ -8,6 +8,7 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.*;
 import com.steelrain.lilac.batch.config.APIConfig;
+import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
@@ -184,6 +185,47 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외", e, videoId);
         }
         return commentList;
+    }
+
+    @Override
+    public YoutubeChannelDTO getChannelInfo(String channelId) {
+        // 테스트 채널 id :  UCZD_mSIrG7VC4Im2lOMZMmQ
+        YoutubeChannelDTO resultDTO = null;
+        try {
+            YouTube youTubeObj = getYoutubeObject();
+            YouTube.Channels.List request = youTubeObj.channels()
+                    .list("brandingSettings,contentDetails,id,snippet,statistics,status,topicDetails");
+            ChannelListResponse response = request.setKey(m_apiConfig.getYoutubeKey()).setId(channelId).execute();
+            /*
+            private Long id;
+            private String channelId;
+            private String title;
+            private String desc;
+            private Timestamp publishDate;
+            private Long viewCount;
+            private Long subscriberCount;
+            private Boolean subscriberCountHidden;
+            private Long videoCount;
+            private String brandingKeywords;
+            private String thumbnailMedium;
+            private String thumbnailHigh;
+             */
+            resultDTO = YoutubeChannelDTO.builder().channelId(response.getItems().get(0).getId())
+                    .title(response.getItems().get(0).getSnippet().getTitle())
+                    .description(response.getItems().get(0).getSnippet().getDescription())
+                    .publishDate(new Timestamp(response.getItems().get(0).getSnippet().getPublishedAt().getValue()))
+                    .viewCount(response.getItems().get(0).getStatistics().getViewCount().longValue())
+                    .subscriberCount(response.getItems().get(0).getStatistics().getSubscriberCount().longValue())
+                    .subscriberCountHidden(response.getItems().get(0).getStatistics().getHiddenSubscriberCount())
+                    .videoCount(response.getItems().get(0).getStatistics().getVideoCount().longValue())
+                    .brandingKeywords(response.getItems().get(0).getBrandingSettings().getChannel().getKeywords())
+                    .thumbnailMedium(response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl())
+                    .thumbnailHigh(response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl())
+                    .build();
+        } catch (IOException | GeneralSecurityException e) {
+            throw new LilacYoutubeAPIException("채널 정보 가져오기 예외", e, channelId);
+        }
+        return resultDTO;
     }
 
     // 재생목록에 있는 영상정보의 유효성 체크, null 이면 true 아니면 false
