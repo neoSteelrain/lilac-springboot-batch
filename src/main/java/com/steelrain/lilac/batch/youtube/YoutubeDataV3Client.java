@@ -13,6 +13,7 @@ import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
+import com.steelrain.lilac.batch.exception.LilacCommentDisabledVideoException;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,6 +66,9 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 resultList.add(dto);
             }
         }catch (IOException ioe){
+            if(resultList == null){
+                resultList = new ArrayList<>(0);
+            }
             throw new LilacYoutubeAPIException("유튜브 재생목록 키워드검색 도중 예외 발생", ioe, keyword);
         }
         return resultList;
@@ -110,6 +114,9 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         return resultList;
     }*/
 
+    /*
+        TODO : 재생목록에 등록된 영상들 중 간혹 중복되어 들어 오는 영상들이 있다. 중복을 제거해주는 작업이 필요하다 
+     */
     @Override
     public List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId){
         if(!StringUtils.hasText(playListId)){
@@ -141,6 +148,9 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 resultList.add(YoutubeVideoDTO.convertYoutubeVideoDTO(item, videoListResponse.getItems().get(0)));
             }
         } catch (IOException | GeneralSecurityException e) {
+            if(resultList == null){
+                resultList = new ArrayList<>(0);
+            }
             throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, playListId);
         }
         return resultList;
@@ -148,7 +158,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
     // 유튜브API를 통해 유튜브 영상의 댓글리스트를 가져온다.
     @Override
-    public List<YoutubeCommentDTO> getCommentList(String videoId){
+    public List<YoutubeCommentDTO> getCommentList(String videoId) {
         if(!StringUtils.hasText(videoId)){
             return new ArrayList<>(0);
         }
@@ -177,18 +187,32 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     continue;
                 }
                 YoutubeCommentDTO dto = YoutubeCommentDTO.builder()
-                                                        .textOriginal(thread.getSnippet().getTopLevelComment().getSnippet().getTextOriginal())
-                                                        .textDisplay(thread.getSnippet().getTopLevelComment().getSnippet().getTextDisplay())
-                                                        .authorDisplayName(thread.getSnippet().getTopLevelComment().getSnippet().getAuthorDisplayName())
-                                                        .totalReplyCount(thread.getSnippet().getTotalReplyCount())
-                                                        .publishDate(new Timestamp(thread.getSnippet().getTopLevelComment().getSnippet().getPublishedAt().getValue()))
-                                                        .updateDate(new Timestamp(thread.getSnippet().getTopLevelComment().getSnippet().getUpdatedAt().getValue()))
-                                                        .build();
+                        .commentId(thread.getId())
+                        .totalReplyCount(thread.getSnippet().getTotalReplyCount())
+                        .authorDisplayName(thread.getSnippet().getTopLevelComment().getSnippet().getAuthorDisplayName())
+                        .textOriginal(thread.getSnippet().getTopLevelComment().getSnippet().getTextOriginal())
+                        .textDisplay(thread.getSnippet().getTopLevelComment().getSnippet().getTextDisplay())
+                        .publishDate(new Timestamp(thread.getSnippet().getTopLevelComment().getSnippet().getPublishedAt().getValue()))
+                        .updateDate(new Timestamp(thread.getSnippet().getTopLevelComment().getSnippet().getUpdatedAt().getValue()))
+                        //.parentId() TODO : 대댓글 처리는 나중에 한다. -> replies.comments.snippet 에 있는 parentId를 가져와야 한다.
+                        //.channelId() DB에 저장하기 직전에 채널정보를 DB에 insert 하고 얻은 id값으로 직접 세팅해주므로 현재는 할 필요가 없다
+                        //.youtubeId() DB에 저장하기 직전에 유튜브영상을 DB에 insert 하고 얻은 id값으로 직접 세팅해주므로 현재는 할 필요가 없다
+                        .build();
                 commentList.add(dto);
             }
         }catch(GoogleJsonResponseException ge){
-            throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외 - 댓글금지영상" + " : videoId - " + videoId, ge, videoId);
+            /*
+                - 예외가 발생할 경우 null을 반환하지 않도록한다.
+                - 길이가 0인 리스트를 반환하므로써 루프에 진입했을때 NPE 가 발생하지 않도록 한다.
+             */
+            if(commentList == null){
+                commentList = new ArrayList<>(0);
+            }
+            throw new LilacCommentDisabledVideoException("영상의 댓글리스트 가져오기 예외 - 댓글금지영상" + " : videoId - " + videoId, ge, videoId);
         } catch (IOException | GeneralSecurityException e) {
+            if(commentList == null){
+                commentList = new ArrayList<>(0);
+            }
             throw new LilacYoutubeAPIException("영상의 댓글리스트 가져오기 예외" + " : videoId - " + videoId, e, videoId);
         }
         return commentList;

@@ -3,10 +3,10 @@ package com.steelrain.lilac.batch.domain;
 import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.*;
+import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 import com.steelrain.lilac.batch.mapper.KeywordMapper;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
-import com.steelrain.lilac.batch.youtube.YoutubeDataV3Client;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -102,16 +102,14 @@ public class YoutubeManager {
            // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
             YoutubePlayListDTO playlist = iter.next();
             List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
-            if(hasNagativeCommentAndLinkComments(videos)){
+            if(!hasPositiveCommentAndLinkedComments(videos)){
                 iter.remove();
                 continue;
             }
-
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
         }
 
-        // TODO : 재생목록, 채널정보, 영상목록, 댓글목록를 DB에 저장해야 한다.
         // insert 순서 : 재생목록, 채널정보, 유튜브영상, 댓글
         m_youtubeRepository.savePlayList(playLists);
         m_youtubeRepository.saveChannelInfo(channelDTO);
@@ -120,15 +118,17 @@ public class YoutubeManager {
                 video.setYoutubePlaylistId(playlist.getId());
                 video.setChannelId(channelDTO.getId());
             }
-            // TODO : 영상정보 insert 해야 한다.
+            log.debug( String.format("============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlist.playListId));
             m_youtubeRepository.saveVideoList(playlist.getVideos());
-            for(YoutubeVideoDTO video : playlist.getVideos()){
-                for(YoutubeCommentDTO dto : video.getComments()) {
-                    dto.setYoutubeId(video.getId());
-                    dto.setChannelId(channelDTO.getId());
-                }
-                m_youtubeRepository.saveCommentList(video.getComments());
-            }
+            log.debug( String.format("============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlist.playListId));
+//            for(YoutubeVideoDTO video : playlist.getVideos()){
+//
+//                for(YoutubeCommentDTO dto : video.getComments()) { //  TODO : NPE
+//                    dto.setYoutubeId(video.getId());
+//                    dto.setChannelId(channelDTO.getId());
+//                }
+//                m_youtubeRepository.saveCommentList(video.getComments());
+//            }
         }
     }
 
@@ -157,40 +157,50 @@ public class YoutubeManager {
     }
 
     /*
-        1. 각 영상의 댓글리스트을 가져온다
-        2. 부정적인 댓글이 있으면 바로 false리턴
-        3. 부정적이지 않은 댓글이 있는 영상에는 가져온 댓글리스트를 설정한다.
+        - 각 영상의 댓글리스트을 가져온다
+        - 부정적인 댓글이 있으면 바로 false리턴
+        - 부정적이지 않은 댓글이 있는 영상에는 가져온 댓글리스트를 설정한다.
      */
-    private boolean hasNagativeCommentAndLinkComments(List<YoutubeVideoDTO> videos){
+    private boolean hasPositiveCommentAndLinkedComments(List<YoutubeVideoDTO> videos){
         for(YoutubeVideoDTO video : videos){
-            List<YoutubeCommentDTO> comments = m_youtubeClient.getCommentList(video.getVideoId());
-            if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴
-                return false;
+            if(video.getCommentCount() <= 0){
+                continue;
             }
-
+            List<YoutubeCommentDTO> comments = null;
+            try{
+                comments = m_youtubeClient.getCommentList(video.getVideoId());
+                if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴
+                    return false;
+                }
+            }catch(LilacYoutubeAPIException le){
+                log.error("댓글 감정분석중 예외 발생 : 예외가 발생한 video id = " + video.getVideoId(), le);
+                continue;
+            }
             video.setComments(comments);
         }
         return true;
     }
 
     /*
-     - 댓글리스트의 댓글들을 1000바이트까지만 모아서 감정분석을 하고 부정적인 댓글을 가진 영상이 있으면 true, 없으면 false
+     - 댓글리스트의 댓글들을 1000바이트까지만 모아서 감정분석을 하고
+       긍정적인 댓글을 가진 영상이 있으면 true, 부정적인이면 false 리턴
      - 영상의 score, magnitude 속성을 감정분석 결과값으로 설정한다.
      */
     private boolean analyzeComment(List<YoutubeCommentDTO> comments, YoutubeVideoDTO video){
         String assembledComment = assembleComment(comments);
 
         log.debug("video.getTitle() : " + video.getTitle());
+        log.debug("videoId : " + video.getVideoId());
         log.debug("comments.size() : " + comments.size());
         log.debug("assembledComment : " + assembledComment);
 
         SentimentDTO sentimentDTO = m_sentimentClient.analyizeComment(assembledComment);
 
-        log.debug("sentimentDTO.toString() : " + sentimentDTO.toString());
+        log.debug("감정분석 결과 : " + sentimentDTO.toString());
 
-        if(sentimentDTO.getScore() >= m_apiConfig.getThreshold()){ // 긍정수치가 임계치보다 높으면 유튜브영상에 감정수치를 입력한다.
-            video.setScore(Float.valueOf(sentimentDTO.getScore()));
-            video.setMagnitude(Float.valueOf(sentimentDTO.getMagnitude()));
+        if(sentimentDTO.getScore() >= m_apiConfig.getThreshold()){ // 긍정수치가 임계치보다 높거나 같다면 통과시키고, 유튜브영상에 감정수치를 입력한다.
+            video.setScore(sentimentDTO.getScore());
+            video.setMagnitude(sentimentDTO.getMagnitude());
             return true;
         }
         return false;

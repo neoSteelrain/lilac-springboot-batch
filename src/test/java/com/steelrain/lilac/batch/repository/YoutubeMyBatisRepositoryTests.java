@@ -100,7 +100,7 @@ public class YoutubeMyBatisRepositoryTests {
                 .textDisplay("dddddddddd")
                 .publishDate(new Timestamp(System.currentTimeMillis()))
                 .updateDate(new Timestamp(System.currentTimeMillis()))
-                .replyCount(22)
+                //.replyCount(22)
                 .parentId("ppppppp")
                 .channelId(1L)
                 .youtubeId(2L)

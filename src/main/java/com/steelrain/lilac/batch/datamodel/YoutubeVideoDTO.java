@@ -73,10 +73,7 @@ public class YoutubeVideoDTO {
         dto.setDesc(videoInfo.getSnippet().getDescription());
         dto.setLikeCount(videoInfo.getStatistics().getLikeCount() == null ? 0 : videoInfo.getStatistics().getLikeCount().longValue());
 
-//        if(videoInfo.getStatistics().getCommentCount() == null){
-//            return null;
-//        }
-        dto.setCommentCount(videoInfo.getStatistics().getCommentCount().longValue());
+        dto.setCommentCount( videoInfo.getStatistics().getCommentCount() == null && videoInfo.getStatistics().getCommentCount().longValue() == 0 ? 0 : videoInfo.getStatistics().getCommentCount().longValue());
         dto.setDuration(videoInfo.getContentDetails().getDuration());
 
         return dto;

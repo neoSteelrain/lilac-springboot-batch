@@ -15,26 +15,7 @@
             (#{channelId}, #{title}, #{description}, #{publishDate}, #{viewCount},
              #{subscriberCount}, #{subscriberCountHidden}, #{videoCount}, #{brandingKeywords}, #{thumbnailMedium}, #{thumbnailHigh})
     </insert>
-<!--
-    private Long channelId;
-    private Long youtubePlaylistId
-    private String videoId;
-    private String title;
-    private String desc;
-    private Timestamp publishDate;
-    private Timestamp fetchDate; // db에 insert 한 날짜, DB 자동입력된다.
-    private String thumbnailMedium;
-    private String thumbnailHigh;
-    private Long ViewCount; // 조회수는 Video api를 따로 호출해야 가져올 수 있다
-    private Integer searchCount;
-    private String playlistId;
-    private Long likeCount; // 좋아요는 Video api를 따로 호출해야 가져올 수 있다
-    private Long favoriteCount;
-    private Long commentCount;
-    private String duration;
-    private Float score;
-    private Float magnitude;
--->
+
     <insert id="insertYoutubeVideoList" useGeneratedKeys="true" keyProperty="id" parameterType="VideoDTO">
         INSERT INTO tbl_youtube(channel_id, youtube_playlist_id, video_id, title, description,
                                 publish_date, thumbnail_medium, thumbnail_high, view_count, search_count,
@@ -45,26 +26,13 @@
                 #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.duration},#{item.score},#{item.magnitude})
             </foreach>
     </insert>
-<!--
-    private Long channelId;
-    private Long youtubeId;
 
-    private String commentId;
-    private Long totalReplyCount;
-    private String authorDisplayName;
-    private String textOriginal;
-    private String textDisplay;
-    private Timestamp publishDate;
-    private Timestamp updateDate;
-    private Integer replyCount;
-    private String parentId;
- -->
     <insert id="insertYoutubeCommentList" useGeneratedKeys="true" keyProperty="id" parameterType="CommentDTO">
-        INSERT INTO tbl_youtube_comment(comment_id, total_reply_count, author_display_name, text_original, text_display,
-                                        publish_date, update_date, reply_count, parent_id, channel_id, youtube_id) VALUES
+        INSERT INTO tbl_youtube_comment(channel_id, youtube_id, comment_id, total_reply_count, author_display_name,
+                                        text_original, text_display, publish_date, update_date, parent_id) VALUES
             <foreach item="item" collection="list" separator=",">
-                (#{item.commentId},#{item.totalReplyCount},#{item.authorDisplayName},#{item.textOriginal},#{item.textDisplay},
-                 #{item.publishDate},#{item.updateDate},#{item.replyCount},#{item.parentId},#{item.channelId},#{item.youtubeId})
+                (#{item.channelId},#{item.youtubeId},#{item.commentId},#{item.totalReplyCount},#{item.authorDisplayName},
+                 #{item.textOriginal},#{item.textDisplay},#{item.publishDate},#{item.updateDate},#{item.parentId})
             </foreach>
     </insert>
 </mapper>

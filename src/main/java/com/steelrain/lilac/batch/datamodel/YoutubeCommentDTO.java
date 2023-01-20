@@ -1,14 +1,12 @@
 package com.steelrain.lilac.batch.datamodel;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.sql.Timestamp;
 
 @Getter
 @Setter
+@ToString
 @AllArgsConstructor
 @Builder
 public class YoutubeCommentDTO {
@@ -39,6 +37,6 @@ public class YoutubeCommentDTO {
     private String textDisplay;
     private Timestamp publishDate;
     private Timestamp updateDate;
-    private Integer replyCount;
+    //private Integer replyCount;  // TODO : 필요없는 필드
     private String parentId;
 }
