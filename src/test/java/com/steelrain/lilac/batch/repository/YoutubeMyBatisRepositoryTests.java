@@ -6,6 +6,7 @@ import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +38,7 @@ public class YoutubeMyBatisRepositoryTests {
         dto.setThumbnailMedium("mmmmmmmmmmmm");
         dto.setThumbnailHigh("hhhhhhhhhhhhhhh");
         dto.setItemCount(100);
+        dto.setChannelIdFk(2L);
         list.add(dto);
 
         int cnt = m_youtubeRepository.savePlayList(list);
@@ -48,11 +50,11 @@ public class YoutubeMyBatisRepositoryTests {
     public void testSaveVideoList(){
         List<YoutubeVideoDTO> list = new ArrayList<>();
         YoutubeVideoDTO dto = new YoutubeVideoDTO();
-        dto.setChannelId(1L);
-        dto.setYoutubePlaylistId(1L);
+        dto.setChannelId(2L);
+        dto.setYoutubePlaylistId(52L);
         dto.setVideoId("vvvvvvvvvv");
         dto.setTitle("tttttttttt");
-        dto.setDesc("dddddddddddddd");
+        dto.setDescription("dddddddddddddd");
         dto.setPublishDate(new Timestamp(System.currentTimeMillis()));
         dto.setThumbnailMedium("mmmmmmmmmmm");
         dto.setThumbnailHigh("hhhhhhhhhhhhh");
@@ -93,7 +95,7 @@ public class YoutubeMyBatisRepositoryTests {
     @Test
     public void testSaveCommentList(){
         YoutubeCommentDTO dto = YoutubeCommentDTO.builder()
-                .commentId("ccccccc")
+                .commentId("dddddddddddd")
                 .totalReplyCount(11L)
                 .authorDisplayName("aaaaaaaa")
                 .textOriginal("ttttttttt")
@@ -102,13 +104,22 @@ public class YoutubeMyBatisRepositoryTests {
                 .updateDate(new Timestamp(System.currentTimeMillis()))
                 //.replyCount(22)
                 .parentId("ppppppp")
-                .channelId(1L)
-                .youtubeId(2L)
+                //.channelId(1L)
+                .channelId("cccccccc")
+                .youtubeId(11L)
                 .build();
         List<YoutubeCommentDTO> list = new ArrayList<>();
         list.add(dto);
         int cnt = m_youtubeRepository.saveCommentList(list);
         assertThat(cnt > 0);
+    }
+
+    @Test
+    @DisplayName("리스트길이가 0일때 insert 쿼리에러 재현")
+    public void testArrayListSizeZeroInsert(){
+        List<YoutubeCommentDTO> list = new ArrayList<>(0);
+        int cnt = m_youtubeRepository.saveCommentList(list);
+        System.out.println("cnt : " + cnt);
     }
 
     @Test

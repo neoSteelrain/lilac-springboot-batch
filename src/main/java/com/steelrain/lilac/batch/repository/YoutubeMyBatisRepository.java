@@ -38,6 +38,9 @@ public class YoutubeMyBatisRepository implements IYoutubeRepository {
 
     @Override
     public int saveCommentList(List<YoutubeCommentDTO> commentList) {
+        if(commentList.size() == 0){
+            return 0;
+        }
         return m_youtubeMapper.insertYoutubeCommentList(commentList);
     }
 }

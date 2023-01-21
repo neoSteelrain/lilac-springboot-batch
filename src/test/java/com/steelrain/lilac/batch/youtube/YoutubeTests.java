@@ -9,6 +9,7 @@ import com.google.api.services.youtube.model.SearchListResponse;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
+import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.*;
 
 
 
+@SpringBootTest
 public class YoutubeTests {
 
     @Autowired
@@ -98,6 +100,15 @@ public class YoutubeTests {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testGetVideoDTOListByPlayListId(){
+        // PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0
+        IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
+        List<YoutubeVideoDTO> res = youtubeClient.getVideoDTOListByPlayListId("PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0");
+
+        assertThat(res != null && res.size() > 0);
     }
 
     @Test

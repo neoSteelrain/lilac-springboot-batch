@@ -14,11 +14,14 @@ public class YoutubePlayListDTO {
 /*
 id	bigint	NO	PRI
 playlist_id	varchar(50)	NO	UNI
+channel_id_fk	bigint	NO	MUL
 title	varchar(100)	YES
 publish_date	datetime	YES
 thumbnail_medium	varchar(255)	YES
 thumbnail_high	varchar(255)	YES
 item_count	int	YES
+reg_date	datetime	YES
+channel_id	varchar(50)	YES
  */
     private Long id;
     public String playListId;
@@ -28,6 +31,7 @@ item_count	int	YES
     private String thumbnailHigh;
     private Integer itemCount;
 
+    private Long channelIdFk;
     private String channelId;
 
     private List<YoutubeVideoDTO> videos;
@@ -40,6 +44,7 @@ item_count	int	YES
         dto.setThumbnailMedium(sr.getSnippet().getThumbnails().getMedium().getUrl());
         dto.setThumbnailHigh(sr.getSnippet().getThumbnails().getHigh().getUrl());
         dto.setChannelId(sr.getSnippet().getChannelId());
+        //dto.setChannelId(sr.getSnippet().getChannelId());
         // itemCount는 재생목록의 영상들을 가져와야 알 수 있음.
         return dto;
     }

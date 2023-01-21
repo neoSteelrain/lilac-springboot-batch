@@ -91,44 +91,58 @@ public class YoutubeManager {
         String keyword = "정보처리기사";
         List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
 
+        // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
         YoutubeChannelDTO channelDTO = null;
         if(playLists != null && playLists.size() >= 1){
             channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
+        }else{
+            return;
         }
-
+        m_youtubeRepository.saveChannelInfo(channelDTO);
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
            // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
            // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
             YoutubePlayListDTO playlist = iter.next();
             List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
-            if(!hasPositiveCommentAndLinkedComments(videos)){
+            if(!hasPositiveCommentAndLinkComments(videos)){
                 iter.remove();
                 continue;
             }
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
+            playlist.setChannelIdFk(channelDTO.getId());
         }
-
-        // insert 순서 : 재생목록, 채널정보, 유튜브영상, 댓글
         m_youtubeRepository.savePlayList(playLists);
-        m_youtubeRepository.saveChannelInfo(channelDTO);
-        for(YoutubePlayListDTO playlist : playLists){
-            for(YoutubeVideoDTO video : playlist.getVideos()){
-                video.setYoutubePlaylistId(playlist.getId());
+        for(YoutubePlayListDTO playlistDTO : playLists){
+            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+                video.setYoutubePlaylistId(playlistDTO.getId());
                 video.setChannelId(channelDTO.getId());
             }
-            log.debug( String.format("============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlist.playListId));
-            m_youtubeRepository.saveVideoList(playlist.getVideos());
-            log.debug( String.format("============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlist.playListId));
-//            for(YoutubeVideoDTO video : playlist.getVideos()){
-//
-//                for(YoutubeCommentDTO dto : video.getComments()) { //  TODO : NPE
+            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
+            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
+            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
+            saveCommentList(playlistDTO.getVideos());
+
+//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+//                log.debug("\n 댓글목록 저장전 videoDTO 정보 : " + video.toString());
+//                for(YoutubeCommentDTO dto : video.getComments()) { //
+//                    log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + dto.toString());
 //                    dto.setYoutubeId(video.getId());
-//                    dto.setChannelId(channelDTO.getId());
 //                }
 //                m_youtubeRepository.saveCommentList(video.getComments());
 //            }
+        }
+    }
+
+    private void saveCommentList(List<YoutubeVideoDTO> videos){
+        for(YoutubeVideoDTO videoDTO : videos){
+            log.debug("\n 댓글목록 저장전 videoDTO.getComments : " + videoDTO.getComments());
+            for(YoutubeCommentDTO commentDTO : videoDTO.getComments()){
+                log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
+                commentDTO.setYoutubeId(videoDTO.getId());
+            }
+            m_youtubeRepository.saveCommentList(videoDTO.getComments()); // TODO : SQL 쿼리문 '' 문제
         }
     }
 
@@ -157,23 +171,21 @@ public class YoutubeManager {
     }
 
     /*
-        - 각 영상의 댓글리스트을 가져온다
+        - 각 영상의 댓글리스트을 유튜브API로 가져온다
         - 부정적인 댓글이 있으면 바로 false리턴
-        - 부정적이지 않은 댓글이 있는 영상에는 가져온 댓글리스트를 설정한다.
+        - 부정적이지 않은 댓글이 있는 영상에는 가져온 댓글리스트를 설정하고 true 리턴
      */
-    private boolean hasPositiveCommentAndLinkedComments(List<YoutubeVideoDTO> videos){
+    private boolean hasPositiveCommentAndLinkComments(List<YoutubeVideoDTO> videos){
         for(YoutubeVideoDTO video : videos){
-            if(video.getCommentCount() <= 0){
-                continue;
-            }
             List<YoutubeCommentDTO> comments = null;
             try{
                 comments = m_youtubeClient.getCommentList(video.getVideoId());
-                if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴
-                    return false;
-                }
+//                if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴 . 감정분석 API 할당량 때문에 테스트할때는 주석처리한다
+//                    return false;
+//                }
             }catch(LilacYoutubeAPIException le){
                 log.error("댓글 감정분석중 예외 발생 : 예외가 발생한 video id = " + video.getVideoId(), le);
+                video.setComments(new ArrayList<>(0));
                 continue;
             }
             video.setComments(comments);
