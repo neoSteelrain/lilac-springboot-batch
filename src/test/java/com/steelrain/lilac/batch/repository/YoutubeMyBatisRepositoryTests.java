@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -125,7 +126,9 @@ public class YoutubeMyBatisRepositoryTests {
     @Test
     @Transactional
     public void testPlayListInsert(){
-        List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO("정보처리기사");
+        Map<String, Object> tmp = m_youtubeClient.getYoutubePlayListDTO("정보처리기사", null);
+        List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) tmp.get("RESULT_LIST");
+        //List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO("정보처리기사");
 
         System.out.println("================== insert 하기 전 id값 출력 시작 ==================");
         playLists.stream().forEach(list ->{

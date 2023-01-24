@@ -4,7 +4,6 @@ import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.*;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
-import com.steelrain.lilac.batch.mapper.KeywordMapper;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import lombok.extern.slf4j.Slf4j;
@@ -32,26 +31,26 @@ import java.util.*;
 @Slf4j
 @Component
 public class YoutubeManager {
-
-    private final KeywordMapper m_subjectMapper;
     private final IYoutubeClient m_youtubeClient;
     private final ISentimentClient m_sentimentClient;
     private final APIConfig m_apiConfig;
     private final CommentByteCounter m_commentByteCounter;
     private final IYoutubeRepository m_youtubeRepository;
+    private final KeywordManager m_keywordManager;
 
-    public YoutubeManager(KeywordMapper subjectMapper,
-                          IYoutubeClient youtubeClient,
+
+    public YoutubeManager(IYoutubeClient youtubeClient,
                           ISentimentClient sentimentClient,
                           APIConfig apiConfig,
                           CommentByteCounter commentByteCounter,
-                          IYoutubeRepository repository){
-        this.m_subjectMapper = subjectMapper;
+                          IYoutubeRepository repository,
+                          KeywordManager keywordManager){
         this.m_youtubeClient = youtubeClient;
         this.m_sentimentClient = sentimentClient;
         this.m_apiConfig = apiConfig;
         this.m_commentByteCounter = commentByteCounter;
         this.m_youtubeRepository = repository;
+        this.m_keywordManager = keywordManager;
     }
 
 
@@ -82,27 +81,97 @@ public class YoutubeManager {
         }
     }*/
 
+//    @Transactional
+//    public void doYoutubeBatch(){
+//        List<KeywordSubjectDTO> subjectList = getSubjectList();
+//        List<KeywordLicenseDTO> licenseList = getLicenseList();
+//
+//        // "정보처리기사" 키워드로 테스트
+//        String keyword = "정보처리기사";
+//        List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
+//
+//        // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
+//        YoutubeChannelDTO channelDTO = null;
+//        if(playLists != null && playLists.size() >= 1){
+//            channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
+//        }else{
+//            return;
+//        }
+//        m_youtubeRepository.saveChannelInfo(channelDTO);
+//        Iterator<YoutubePlayListDTO> iter = playLists.iterator();
+//        while(iter.hasNext()){
+//           // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
+//           // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
+//            YoutubePlayListDTO playlist = iter.next();
+//            List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
+//            if(!hasPositiveCommentAndLinkComments(videos)){
+//                iter.remove();
+//                continue;
+//            }
+//            playlist.setItemCount(videos.size());
+//            playlist.setVideos(videos);
+//            playlist.setChannelIdFk(channelDTO.getId());
+//        }
+//        m_youtubeRepository.savePlayList(playLists);
+//        for(YoutubePlayListDTO playlistDTO : playLists){
+//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+//                video.setYoutubePlaylistId(playlistDTO.getId());
+//                video.setChannelId(channelDTO.getId());
+//            }
+//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
+//            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
+//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
+//            saveCommentList(playlistDTO.getVideos());
+//
+////            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+////                log.debug("\n 댓글목록 저장전 videoDTO 정보 : " + video.toString());
+////                for(YoutubeCommentDTO dto : video.getComments()) { //
+////                    log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + dto.toString());
+////                    dto.setYoutubeId(video.getId());
+////                }
+////                m_youtubeRepository.saveCommentList(video.getComments());
+////            }
+//        }
+//    }
+
     @Transactional
-    public void dispatchYoutube(){
-        List<KeywordSubjectDTO> subjectList = getSubjectList();
-        List<KeywordLicenseDTO> licenseList = getLicenseList();
+    public void doYoutubeBatch(){
+        doSubjectBatch();
+    }
 
-        // "정보처리기사" 키워드로 테스트
-        String keyword = "정보처리기사";
-        List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
+    private void doSubjectBatch(){
+        List<KeywordSubjectDTO> subjectList = m_keywordManager.getSubjectList();
+        for (KeywordSubjectDTO subjectDTO : subjectList){
+            String pageToken = fetchYoutubeData(subjectDTO.getKeyWord(), subjectDTO.getPageToken());
+            SubjectBatchResultDTO batchResultDTO = SubjectBatchResultDTO.builder()
+                    .id(subjectDTO.getId())
+                    .pageToken(pageToken)
+                    .build();
+            m_keywordManager.updateSubjectPageToken(batchResultDTO);
+        }
+    }
 
+
+
+    private String fetchYoutubeData(String keyword, String paramToken){
+        log.debug(String.format("\n==================== 키워드로 유튜브데이터 받아오기 시작, 키워드 : %s =========================", keyword));
         // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
+        //List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
+        Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
+        List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get("RESULT_LIST");
+        String pageToken = (String) resultMap.get("PAGE_TOKEN");
+
         YoutubeChannelDTO channelDTO = null;
         if(playLists != null && playLists.size() >= 1){
             channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
         }else{
-            return;
+            return null;
         }
         m_youtubeRepository.saveChannelInfo(channelDTO);
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
-           // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
-           // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
+            // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
+            // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
             YoutubePlayListDTO playlist = iter.next();
             List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
             if(!hasPositiveCommentAndLinkComments(videos)){
@@ -123,16 +192,8 @@ public class YoutubeManager {
             m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
             log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
             saveCommentList(playlistDTO.getVideos());
-
-//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
-//                log.debug("\n 댓글목록 저장전 videoDTO 정보 : " + video.toString());
-//                for(YoutubeCommentDTO dto : video.getComments()) { //
-//                    log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + dto.toString());
-//                    dto.setYoutubeId(video.getId());
-//                }
-//                m_youtubeRepository.saveCommentList(video.getComments());
-//            }
         }
+        return pageToken;
     }
 
     private void saveCommentList(List<YoutubeVideoDTO> videos){
@@ -228,18 +289,5 @@ public class YoutubeManager {
             }
         }
         return m_commentByteCounter.getTotalComment();
-    }
-
-
-
-
-    // 미리등록된 검색키워드를 목록으로 가져온다.
-    private List<KeywordSubjectDTO> getSubjectList(){
-        return m_subjectMapper.getSubjectList();
-    }
-
-    // 미리등록된 자격증정보를 목록으로 가져온다.
-    private List<KeywordLicenseDTO> getLicenseList(){
-        return m_subjectMapper.getLicenseList();
     }
 }

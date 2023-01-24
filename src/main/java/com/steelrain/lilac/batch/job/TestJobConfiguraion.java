@@ -47,6 +47,7 @@ public class TestJobConfiguraion {
                 .tasklet(testTasklet()).build();
     }
 
+    // 비즈니스 로직 실행
     @Bean
     public Tasklet testTasklet(){
         return ((contribution, chunkContext) -> {

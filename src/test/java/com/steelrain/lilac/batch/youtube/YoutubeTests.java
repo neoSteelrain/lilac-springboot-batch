@@ -30,17 +30,16 @@ public class YoutubeTests {
     @Autowired
     private APIConfig apiConfig;
 
-
-    /*@Test
-    public void testGetYoutubePlayList(){
-        IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
-        SearchListResponse res = youtubeClient.getYoutubePlayList("정보처리기사");
-
-        assertThat(res != null);
-
-        testTEEEE(res);
-        //searchListResponseToJsonFile(res);
-    }*/
+//    @Test
+//    public void testGetYoutubePlayList(){
+//        IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
+//        SearchListResponse res = youtubeClient.getYoutubePlayListDTO("정보처리기사");
+//
+//        assertThat(res != null);
+//
+//        testTEEEE(res);
+//        //searchListResponseToJsonFile(res);
+//    }
 
     /*@Test
     public void testGetYoutubePlayListByMock(){
@@ -103,12 +102,25 @@ public class YoutubeTests {
     }
 
     @Test
+    public void testUUUUUU(){
+        System.out.println("9 / 20 = " + 9 / 20);
+        System.out.println("0 % 20 = " + 0 % 20);
+    }
+
+
+    @Test
     public void testGetVideoDTOListByPlayListId(){
-        // PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0
+        // PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0 정치기
+        // PLW2UjW795-f5JPTsYHGAawAck9cQRw5TD 자바
         IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
-        List<YoutubeVideoDTO> res = youtubeClient.getVideoDTOListByPlayListId("PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0");
+        List<YoutubeVideoDTO> res = youtubeClient.getVideoDTOListByPlayListId("PLW2UjW795-f5JPTsYHGAawAck9cQRw5TD");
 
         assertThat(res != null && res.size() > 0);
+
+        System.out.println("cnt : " + res.size());
+        res.stream().forEach(dto -> {
+            System.out.println(dto.toString());
+        });
     }
 
     @Test

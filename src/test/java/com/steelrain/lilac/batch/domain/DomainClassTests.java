@@ -27,7 +27,7 @@ public class DomainClassTests {
 
     @Test
     public void testYoutubeManager(){
-        m_youtubeManager.dispatchYoutube();
+        m_youtubeManager.doYoutubeBatch();
     }
 
     @Test
@@ -62,8 +62,8 @@ public class DomainClassTests {
     }
 
     @Test
-    @Transactional
+    //@Transactional
     public void testDispatchYoutube(){
-        m_youtubeManager.dispatchYoutube();
+        m_youtubeManager.doYoutubeBatch();
     }
 }

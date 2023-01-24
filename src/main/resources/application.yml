@@ -20,3 +20,4 @@ logging:
   level:
     root: info
     com.steelrain.lilac.batch: debug
+

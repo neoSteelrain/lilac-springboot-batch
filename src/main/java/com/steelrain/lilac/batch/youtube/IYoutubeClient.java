@@ -7,11 +7,13 @@ import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IYoutubeClient {
     //SearchListResponse getYoutubePlayList(String keyword);
 
-    List<YoutubePlayListDTO> getYoutubePlayListDTO(String keyword);
+    //List<YoutubePlayListDTO> getYoutubePlayListDTO(String keyword);
+    Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken);
     //PlaylistItemListResponse getVideoListByPlayListId(String playListId);
     List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId);
 
