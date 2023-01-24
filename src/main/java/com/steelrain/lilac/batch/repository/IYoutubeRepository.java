@@ -6,10 +6,13 @@ import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IYoutubeRepository {
     int savePlayList(List<YoutubePlayListDTO> playList);
-    int saveChannelInfo(YoutubeChannelDTO channelDTO);
+    int saveChannelList(List<YoutubeChannelDTO> chnList);
     int saveVideoList(List<YoutubeVideoDTO> videoList);
     int saveCommentList(List<YoutubeCommentDTO> commentList);
+    List<YoutubeChannelDTO> getChannelList(List<String> chnIdList);
+
 }

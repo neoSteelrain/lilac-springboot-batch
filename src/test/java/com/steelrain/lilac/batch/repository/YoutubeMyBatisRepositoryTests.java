@@ -6,6 +6,7 @@ import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
+import io.micrometer.core.annotation.TimedSet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,7 +90,9 @@ public class YoutubeMyBatisRepositoryTests {
                 .thumbnailMedium("mmmmmmmmmmmm")
                 .thumbnailHigh("hhhhhhhhhhhh")
                 .build();
-        int cnt = m_youtubeRepository.saveChannelInfo(dto);
+        List<YoutubeChannelDTO> list = new ArrayList<>(1);
+        list.add(dto);
+        int cnt = m_youtubeRepository.saveChannelList(list);
         assertThat(cnt > 0);
     }
 
@@ -146,5 +149,20 @@ public class YoutubeMyBatisRepositoryTests {
 
         assertThat(cnt > 0);
         System.out.println("cnt : " + cnt);
+    }
+
+    @Test
+    public void testGetChannelMap(){
+        List<String> param = new ArrayList<>(2);
+        param.add("UC1IsspG2U_SYK8tZoRsyvfg");
+        param.add("iiiiiiiii");
+
+        List<YoutubeChannelDTO> res = m_youtubeRepository.getChannelList(param);
+
+        assertThat(res != null);
+
+        res.stream().forEach(dto -> {
+            System.out.println(dto.toString());
+        });
     }
 }

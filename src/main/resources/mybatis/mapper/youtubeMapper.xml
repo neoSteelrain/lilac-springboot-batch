@@ -2,11 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.steelrain.lilac.batch.mapper.YoutubeMapper">
-    <insert id="insertYoutubeChannelInfo" useGeneratedKeys="true" keyProperty="id" parameterType="ChannelDTO">
-        INSERT INTO tbl_youtube_channel(channel_id, title, description, publish_date, view_count,
+    <insert id="insertYoutubeChannelList" useGeneratedKeys="true" keyProperty="id" parameterType="ChannelDTO">
+        INSERT IGNORE INTO tbl_youtube_channel(channel_id, title, description, publish_date, view_count,
                                         subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high) VALUES
-            (#{channelId}, #{title}, #{description}, #{publishDate}, #{viewCount},
-             #{subscriberCount}, #{subscriberCountHidden}, #{videoCount}, #{brandingKeywords}, #{thumbnailMedium}, #{thumbnailHigh})
+        <foreach item="item" collection="list" separator=",">
+            (#{item.channelId},#{item.title},#{item.description},#{item.publishDate},#{item.viewCount},
+            #{item.subscriberCount},#{item.subscriberCountHidden},#{item.videoCount},#{item.brandingKeywords},#{item.thumbnailMedium},#{item.thumbnailHigh})
+        </foreach>
     </insert>
 
     <insert id="insertYoutubePlaylist" useGeneratedKeys="true" keyProperty="id" parameterType="PlayListDTO">
@@ -20,25 +22,13 @@
         INSERT IGNORE INTO tbl_youtube(channel_id,youtube_playlist_id,video_id,title,description,
                                 publish_date,thumbnail_medium,thumbnail_high,view_count,search_count,
                                 playlist_id,like_count,favorite_count,comment_count,duration,score,magnitude) VALUES
-            <foreach item="item" collection="list" separator=",">
-                (#{item.channelId},#{item.youtubePlaylistId},#{item.videoId},#{item.title},#{item.description},
-                #{item.publishDate},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.viewCount},#{item.searchCount},
-                #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.duration},#{item.score},#{item.magnitude})
-            </foreach>
+        <foreach item="item" collection="list" separator=",">
+            (#{item.channelId},#{item.youtubePlaylistId},#{item.videoId},#{item.title},#{item.description},
+            #{item.publishDate},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.viewCount},#{item.searchCount},
+            #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.duration},#{item.score},#{item.magnitude})
+        </foreach>
     </insert>
-<!--
-    private Long youtubeId;
-    private String commentId;
-    private Long totalReplyCount;
-    private String authorDisplayName;
-    private String textOriginal;
-    private String textDisplay;
-    private Timestamp publishDate;
-    private Timestamp updateDate;
-    //private Integer replyCount;  // TODO : 필요없는 필드
-    private String parentId;
-    private String channelId;
- -->
+
     <insert id="insertYoutubeCommentList" useGeneratedKeys="true" keyProperty="id" parameterType="CommentDTO">
         INSERT IGNORE INTO tbl_youtube_comment(youtube_id,comment_id,total_reply_count,author_display_name,text_original,text_display,
                                         publish_date,update_date,parent_id,channel_id) VALUES
@@ -47,4 +37,13 @@
                 ,#{item.textDisplay},#{item.publishDate},#{item.updateDate},#{item.parentId},#{item.channelId})
             </foreach>
     </insert>
+
+    <select id="selectChannelList" resultType="ChannelDTO">
+        SELECT *
+        FROM tbl_youtube_channel chn
+        WHERE chn.channel_id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
 </mapper>

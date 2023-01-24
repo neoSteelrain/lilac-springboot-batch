@@ -4,6 +4,7 @@ import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.*;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
+import com.steelrain.lilac.batch.exception.LilacYoutubeDomainException;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class YoutubeManager {
     private final CommentByteCounter m_commentByteCounter;
     private final IYoutubeRepository m_youtubeRepository;
     private final KeywordManager m_keywordManager;
+    private final YoutubeChannelManager m_channelManager;
 
 
     public YoutubeManager(IYoutubeClient youtubeClient,
@@ -44,13 +46,15 @@ public class YoutubeManager {
                           APIConfig apiConfig,
                           CommentByteCounter commentByteCounter,
                           IYoutubeRepository repository,
-                          KeywordManager keywordManager){
+                          KeywordManager keywordManager,
+                          YoutubeChannelManager channelManager){
         this.m_youtubeClient = youtubeClient;
         this.m_sentimentClient = sentimentClient;
         this.m_apiConfig = apiConfig;
         this.m_commentByteCounter = commentByteCounter;
         this.m_youtubeRepository = repository;
         this.m_keywordManager = keywordManager;
+        this.m_channelManager = channelManager;
     }
 
 
@@ -160,14 +164,8 @@ public class YoutubeManager {
         Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get("RESULT_LIST");
         String pageToken = (String) resultMap.get("PAGE_TOKEN");
+        m_channelManager.initManager(playLists);
 
-        YoutubeChannelDTO channelDTO = null;
-        if(playLists != null && playLists.size() >= 1){
-            channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
-        }else{
-            return null;
-        }
-        m_youtubeRepository.saveChannelInfo(channelDTO);
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
             // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
@@ -180,13 +178,15 @@ public class YoutubeManager {
             }
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
-            playlist.setChannelIdFk(channelDTO.getId());
+            playlist.setChannelIdFk(m_channelManager.getId(playlist.getChannelId()));
         }
+        //saveChannelList(playLists);  원래 위치
+
         m_youtubeRepository.savePlayList(playLists);
         for(YoutubePlayListDTO playlistDTO : playLists){
             for(YoutubeVideoDTO video : playlistDTO.getVideos()){
                 video.setYoutubePlaylistId(playlistDTO.getId());
-                video.setChannelId(channelDTO.getId());
+                video.setChannelId(m_channelManager.getId(playlistDTO.getChannelId()));
             }
             log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
             m_youtubeRepository.saveVideoList(playlistDTO.getVideos());

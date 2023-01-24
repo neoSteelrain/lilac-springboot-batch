@@ -16,6 +16,9 @@ public class APIConfiguration {
     @Value("${sentiment.threshold}")
     private String m_threshold;
 
+    @Value("${sentiment.comment.count}")
+    private long m_commentCount;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
         return new PropertySourcesPlaceholderConfigurer();
@@ -23,6 +26,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey, m_threshold);
+        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount);
     }
 }
