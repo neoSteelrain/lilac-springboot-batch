@@ -40,7 +40,7 @@ public class YoutubeMyBatisRepositoryTests {
         dto.setThumbnailMedium("mmmmmmmmmmmm");
         dto.setThumbnailHigh("hhhhhhhhhhhhhhh");
         dto.setItemCount(100);
-        dto.setChannelIdFk(2L);
+        dto.setChannelId(2L);
         list.add(dto);
 
         int cnt = m_youtubeRepository.savePlayList(list);

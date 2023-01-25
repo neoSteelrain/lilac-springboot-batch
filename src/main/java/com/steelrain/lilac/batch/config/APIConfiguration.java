@@ -17,7 +17,7 @@ public class APIConfiguration {
     private String m_threshold;
 
     @Value("${sentiment.comment.count}")
-    private long m_commentCount;
+    private String m_commentCount;
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){

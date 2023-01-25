@@ -2,6 +2,7 @@ package com.steelrain.lilac.batch.domain;
 
 import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
+import com.steelrain.lilac.batch.exception.LilacBatchException;
 import com.steelrain.lilac.batch.exception.LilacNoSushChannelnfoException;
 import com.steelrain.lilac.batch.exception.LilacYoutubeDomainException;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
@@ -28,14 +29,23 @@ public class YoutubeChannelManager {
         this.m_youtubeRepository = repository;
     }
 
+    /*
+       - 재생목록의 채널정보를 API를 통해 가져온다
+       - 채널정보를 DB에 저장하고 id PK 값을 얻는다
+       - DB에서 가져온 id PK값을 재생목록의 채널id FK로 설정해준다
+     */
     public void initManager(List<YoutubePlayListDTO> playLists){
         // 채널목록만들기
         m_chnDTOMap = new HashMap<>(playLists.size());
-        for(YoutubePlayListDTO dto : playLists){
-            if(m_chnDTOMap.containsKey(dto.getChannelId())){
-                continue;
+        try{
+            for(YoutubePlayListDTO dto : playLists){
+                if(m_chnDTOMap.containsKey(dto.getChannelId())){
+                    continue;
+                }
+                m_chnDTOMap.put(dto.getChannelIdOrigin(), m_youtubeClient.getChannelInfo(dto.getChannelIdOrigin()));
             }
-            m_chnDTOMap.put(dto.getChannelId(), m_youtubeClient.getChannelInfo(dto.getChannelId()));
+        }catch(LilacBatchException be){
+            throw new LilacYoutubeDomainException(String.format("채널관리자 초기화중 예외 발생"), be);
         }
         List<YoutubeChannelDTO> chnList = new ArrayList<>(m_chnDTOMap.values());
 

@@ -56,7 +56,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             String tmp = getTestSubjectListStr();
             response = JacksonFactory.getDefaultInstance().fromString(tmp, SearchListResponse.class);
 
-//            YouTube youtube = getYoutubeObject();
+//            YouTube youtube = getYoutubeObject(); // 실제 코드
 //            YouTube.Search.List request = youtube.search().list("id,snippet");
 //            request.setQ(keyword)
 //                    .setKey(m_apiConfig.getYoutubeKey())

@@ -164,7 +164,7 @@ public class YoutubeManager {
         Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get("RESULT_LIST");
         String pageToken = (String) resultMap.get("PAGE_TOKEN");
-        m_channelManager.initManager(playLists);
+//        m_channelManager.initManager(playLists);
 
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
@@ -178,21 +178,21 @@ public class YoutubeManager {
             }
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
-            playlist.setChannelIdFk(m_channelManager.getId(playlist.getChannelId()));
+            playlist.setChannelId(m_channelManager.getId(playlist.getChannelIdOrigin()));
         }
-        //saveChannelList(playLists);  원래 위치
+        m_channelManager.initManager(playLists);
 
         m_youtubeRepository.savePlayList(playLists);
-        for(YoutubePlayListDTO playlistDTO : playLists){
-            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
-                video.setYoutubePlaylistId(playlistDTO.getId());
-                video.setChannelId(m_channelManager.getId(playlistDTO.getChannelId()));
-            }
-            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
-            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
-            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
-            saveCommentList(playlistDTO.getVideos());
-        }
+//        for(YoutubePlayListDTO playlistDTO : playLists){
+//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+//                video.setYoutubePlaylistId(playlistDTO.getId());
+//                video.setChannelId(m_channelManager.getId(playlistDTO.getChannelIdOrigin()));
+//            }
+//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
+//            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
+//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
+//            saveCommentList(playlistDTO.getVideos());
+//        }
         return pageToken;
     }
 
@@ -203,7 +203,7 @@ public class YoutubeManager {
                 log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
                 commentDTO.setYoutubeId(videoDTO.getId());
             }
-            m_youtubeRepository.saveCommentList(videoDTO.getComments()); // TODO : SQL 쿼리문 '' 문제
+            m_youtubeRepository.saveCommentList(videoDTO.getComments());
         }
     }
 

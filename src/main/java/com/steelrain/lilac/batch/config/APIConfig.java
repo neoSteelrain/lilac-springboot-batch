@@ -11,9 +11,9 @@ public class APIConfig {
     private float threshold;
     private long commentCount;
 
-    public APIConfig(String youtubeKey, String threshold, long commentCount){
+    public APIConfig(String youtubeKey, String threshold, String commentCount){
         this.youtubeKey = youtubeKey;
         this.threshold = Float.valueOf(threshold).floatValue();
-        this.commentCount = commentCount;
+        this.commentCount = Long.valueOf(commentCount);
     }
 }

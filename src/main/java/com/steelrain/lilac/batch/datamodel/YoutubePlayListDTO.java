@@ -31,8 +31,8 @@ channel_id	varchar(50)	YES
     private String thumbnailHigh;
     private Integer itemCount;
 
-    private Long channelIdFk;
-    private String channelId;
+    private Long channelId; // 채널 테이블 FK
+    private String channelIdOrigin; // API응답에서 반환된 채널ID 문자열
 
     private List<YoutubeVideoDTO> videos;
 
@@ -43,7 +43,7 @@ channel_id	varchar(50)	YES
         dto.setPublishDate(new Timestamp(sr.getSnippet().getPublishedAt().getValue()));
         dto.setThumbnailMedium(sr.getSnippet().getThumbnails().getMedium().getUrl());
         dto.setThumbnailHigh(sr.getSnippet().getThumbnails().getHigh().getUrl());
-        dto.setChannelId(sr.getSnippet().getChannelId());
+        dto.setChannelIdOrigin(sr.getSnippet().getChannelId());
         //dto.setChannelId(sr.getSnippet().getChannelId());
         // itemCount는 재생목록의 영상들을 가져와야 알 수 있음.
         return dto;
