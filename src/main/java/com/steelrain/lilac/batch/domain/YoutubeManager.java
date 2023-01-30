@@ -164,7 +164,7 @@ public class YoutubeManager {
         Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get("RESULT_LIST");
         String pageToken = (String) resultMap.get("PAGE_TOKEN");
-//        m_channelManager.initManager(playLists);
+        m_channelManager.initManager(playLists);
 
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
@@ -180,7 +180,7 @@ public class YoutubeManager {
             playlist.setVideos(videos);
             playlist.setChannelId(m_channelManager.getId(playlist.getChannelIdOrigin()));
         }
-        m_channelManager.initManager(playLists);
+        //m_channelManager.initManager(playLists);
 
         m_youtubeRepository.savePlayList(playLists);
 //        for(YoutubePlayListDTO playlistDTO : playLists){

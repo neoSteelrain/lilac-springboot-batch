@@ -38,7 +38,29 @@ public class YoutubeVideoDTO {
     private List<YoutubeCommentDTO> comments;
 
     // 영상정보의 값이 일정하게 넘어오지 않는다. 때때로 속성값이 있거나 없거나(null) 일정하게 넘어오지 않는다.
-    public static YoutubeVideoDTO convertYoutubeVideoDTO(PlaylistItem item, Video videoInfo){
+    // 유튜브 영상의 상세정보를 사용하지 않는 버전
+    public static YoutubeVideoDTO convertYoutubeVideoDTO(PlaylistItem item){
+
+        YoutubeVideoDTO dto = new YoutubeVideoDTO();
+        dto.setVideoId(item.getContentDetails().getVideoId());
+        dto.setTitle(item.getSnippet().getTitle());
+        dto.setPlaylistId(item.getSnippet().getPlaylistId());
+        dto.setPublishDate(new Timestamp(item.getContentDetails().getVideoPublishedAt().getValue()));
+        dto.setThumbnailMedium(item.getSnippet().getThumbnails().getMedium().getUrl());
+        dto.setThumbnailHigh(item.getSnippet().getThumbnails().getHigh().getUrl());
+
+        // 숫자형필드에는 정보가 없음을 표시하기 위해 0 대신 -1을 세팅한다
+        dto.setViewCount(-1L);
+        dto.setDescription(item.getSnippet().getDescription());
+        dto.setLikeCount(-1L);
+        dto.setCommentCount(-1L);
+        dto.setDuration(null);
+
+        return dto;
+    }
+
+    // 유튜브 영상의 상세정보를 사용하는 버전
+    /*public static YoutubeVideoDTO convertYoutubeVideoDTO(PlaylistItem item, Video videoInfo){
         YoutubeVideoDTO dto = new YoutubeVideoDTO();
         dto.setVideoId(item.getContentDetails().getVideoId());
         dto.setTitle(item.getSnippet().getTitle());
@@ -54,35 +76,5 @@ public class YoutubeVideoDTO {
         dto.setDuration(videoInfo.getContentDetails().getDuration());
 
         return dto;
-    }
-    /*public static Optional<YoutubeVideoDTO> convertYoutubeVideoDTO(PlaylistItem item, VideoListResponse videoInfo){
-        if(item.getSnippet() == null || item.getContentDetails() == null){
-           return Optional.empty();
-        }
-
-        if(videoInfo.getItems() == null || videoInfo.getItems().size() == 0) {
-            return Optional.empty();
-        }
-        Video video = videoInfo.getItems().get(0);
-        if(video.getStatistics() == null || video.getSnippet() == null || video.getContentDetails() == null){
-            return Optional.empty();
-        }
-
-        YoutubeVideoDTO dto = new YoutubeVideoDTO();
-        dto.setVideoId(item.getContentDetails().getVideoId());
-        dto.setTitle(item.getSnippet().getTitle());
-        dto.setPlaylistId(item.getSnippet().getPlaylistId());
-        dto.setPublishDate(new Timestamp(item.getContentDetails().getVideoPublishedAt().getValue()));
-        dto.setThumbnailMedium(item.getSnippet().getThumbnails().getMedium().getUrl());
-        dto.setThumbnailHigh(item.getSnippet().getThumbnails().getHigh().getUrl());
-
-        dto.setViewCount(video.getStatistics().getViewCount() == null ? 0 : video.getStatistics().getViewCount().longValue());
-        dto.setDesc(video.getSnippet().getDescription());
-        dto.setLikeCount(video.getStatistics().getLikeCount() == null ? 0 : video.getStatistics().getLikeCount().longValue());
-        dto.setDuration(video.getContentDetails().getDuration());
-
-        return Optional.of(dto);
     }*/
-
-
 }
