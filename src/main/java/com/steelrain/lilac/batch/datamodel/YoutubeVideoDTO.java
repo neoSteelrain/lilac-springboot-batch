@@ -23,6 +23,7 @@ public class YoutubeVideoDTO {
     private String description;
     private Timestamp publishDate;
     private Timestamp regDate; // db에 insert 한 날짜, DB 자동입력된다.
+    private String thumbnailDefault;
     private String thumbnailMedium;
     private String thumbnailHigh;
     private Long viewCount; // 조회수는 Video api를 따로 호출해야 가져올 수 있다
@@ -43,7 +44,7 @@ public class YoutubeVideoDTO {
         dto.setVideoId(item.getContentDetails().getVideoId());
         dto.setTitle(item.getSnippet().getTitle());
         dto.setPlaylistId(item.getSnippet().getPlaylistId());
-        dto.setPublishDate(new Timestamp(item.getContentDetails().getVideoPublishedAt().getValue()));
+        dto.setPublishDate(new Timestamp(item.getSnippet().getPublishedAt().getValue()));
         dto.setThumbnailMedium(item.getSnippet().getThumbnails().getMedium().getUrl());
         dto.setThumbnailHigh(item.getSnippet().getThumbnails().getHigh().getUrl());
 
@@ -52,6 +53,25 @@ public class YoutubeVideoDTO {
         dto.setLikeCount(videoInfo.getStatistics().getLikeCount() == null ? 0 : videoInfo.getStatistics().getLikeCount().longValue());
         dto.setCommentCount( videoInfo.getStatistics().getCommentCount() == null && videoInfo.getStatistics().getCommentCount().longValue() == 0 ? 0 : videoInfo.getStatistics().getCommentCount().longValue());
         dto.setDuration(videoInfo.getContentDetails().getDuration());
+
+        return dto;
+    }
+
+    public static YoutubeVideoDTO convertYoutubeVideoDTOnoDetail(PlaylistItem item){
+        YoutubeVideoDTO dto = new YoutubeVideoDTO();
+        dto.setVideoId(item.getContentDetails().getVideoId());
+        dto.setTitle(item.getSnippet().getTitle());
+        dto.setPlaylistId(item.getSnippet().getPlaylistId());
+        dto.setPublishDate(new Timestamp(item.getSnippet().getPublishedAt().getValue()));
+        dto.setThumbnailDefault(item.getSnippet().getThumbnails().getDefault().getUrl());
+        dto.setThumbnailMedium(item.getSnippet().getThumbnails().getMedium().getUrl());
+        dto.setThumbnailHigh(item.getSnippet().getThumbnails().getHigh().getUrl());
+
+        dto.setViewCount(0L);
+        dto.setDescription(item.getSnippet().getDescription());
+        dto.setLikeCount(0L);
+        dto.setCommentCount(0L);
+        dto.setDuration(null);
 
         return dto;
     }

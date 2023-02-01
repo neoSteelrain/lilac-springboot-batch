@@ -7,6 +7,7 @@ import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 import com.steelrain.lilac.batch.exception.LilacYoutubeDomainException;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
+import com.steelrain.lilac.batch.youtube.YoutubeDataV3Client;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -140,7 +141,20 @@ public class YoutubeManager {
 
     @Transactional
     public void doYoutubeBatch(){
-        doSubjectBatch();
+        //doSubjectBatch();
+        doLicenseBatch();
+    }
+
+    private void doLicenseBatch() {
+        List<KeywordLicenseDTO> licenseList = m_keywordManager.getLicenseList();
+        for (KeywordLicenseDTO licenseDTO : licenseList) {
+            String pageToken = fetchYoutubeData(licenseDTO.getKeyWord(), licenseDTO.getPageToken());
+            LicenseBatchResultDTO batchResultDTO = LicenseBatchResultDTO.builder()
+                    .id(licenseDTO.getId())
+                    .pageToken(licenseDTO.getPageToken())
+                    .build();
+            m_keywordManager.udpateLicensePageToken(batchResultDTO);
+        }
     }
 
     private void doSubjectBatch(){
@@ -155,22 +169,28 @@ public class YoutubeManager {
         }
     }
 
-
-
+    /*
+        keyword : 검색어
+        paramToken : 유튜브 API 전달할 페이지토큰
+     */
     private String fetchYoutubeData(String keyword, String paramToken){
         log.debug(String.format("\n==================== 키워드로 유튜브데이터 받아오기 시작, 키워드 : %s =========================", keyword));
         // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
-        //List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
         Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
-        List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get("RESULT_LIST");
-        String pageToken = (String) resultMap.get("PAGE_TOKEN");
-//        m_channelManager.initManager(playLists);
+        List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PLAY_LIST);
+
+        String pageToken = (String) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PAGE_TOKEN);
+        m_channelManager.initManager(playLists); // 재생목록에 있는 채널들의 정보를 초기화 한다
 
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
             // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
             // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
             YoutubePlayListDTO playlist = iter.next();
+            // TODO : 영상이 너무 많아서 테스트 할때는 빼자
+//            if(playlist.getTitle().contains("시나공")){
+//                continue;
+//            }
             List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
             if(!hasPositiveCommentAndLinkComments(videos)){
                 iter.remove();
@@ -178,21 +198,26 @@ public class YoutubeManager {
             }
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
-            playlist.setChannelId(m_channelManager.getId(playlist.getChannelIdOrigin()));
+            Optional<Long> chnId = m_channelManager.getId(playlist.getChannelIdOrigin());
+            playlist.setChannelId(chnId.orElse(null));
         }
-        m_channelManager.initManager(playLists);
+
+        playLists.stream().forEach(dto -> {
+            log.debug("\n============ insert 전 채널정보 ===========");
+            log.debug(String.format("\n============ 채널정보 : %s", dto.toString()));
+        });
 
         m_youtubeRepository.savePlayList(playLists);
-//        for(YoutubePlayListDTO playlistDTO : playLists){
-//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
-//                video.setYoutubePlaylistId(playlistDTO.getId());
-//                video.setChannelId(m_channelManager.getId(playlistDTO.getChannelIdOrigin()));
-//            }
-//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
-//            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
-//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
-//            saveCommentList(playlistDTO.getVideos());
-//        }
+        for(YoutubePlayListDTO playlistDTO : playLists){
+            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
+                video.setYoutubePlaylistId(playlistDTO.getId());
+                video.setChannelId(playlistDTO.getChannelId());
+            }
+            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
+            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
+            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
+            saveCommentList(playlistDTO.getVideos());
+        }
         return pageToken;
     }
 

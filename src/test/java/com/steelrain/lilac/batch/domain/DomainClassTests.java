@@ -45,7 +45,7 @@ public class DomainClassTests {
     }
 
     @Test
-    @DisplayName("댓글모곡 NPE 발생 테스트")
+    @DisplayName("댓글목록 NPE 발생 테스트")
     public void testCommentListNPE(){
         /*
         for(YoutubeCommentDTO dto : video.getComments()) { //  TODO : NPE

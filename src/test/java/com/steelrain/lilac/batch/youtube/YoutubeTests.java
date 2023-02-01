@@ -24,22 +24,22 @@ import static org.assertj.core.api.Assertions.*;
 
 
 
+
 @SpringBootTest
 public class YoutubeTests {
 
     @Autowired
     private APIConfig apiConfig;
 
-//    @Test
-//    public void testGetYoutubePlayList(){
-//        IYoutubeClient youtubeClient = new YoutubeDataV3Client(this.apiConfig);
-//        SearchListResponse res = youtubeClient.getYoutubePlayListDTO("정보처리기사");
-//
-//        assertThat(res != null);
-//
-//        testTEEEE(res);
-//        //searchListResponseToJsonFile(res);
-//    }
+    @Test
+    public void testGetYoutubePlayList() throws IOException {
+        YoutubeDataV3Client youtubeClient = new YoutubeDataV3Client(this.apiConfig);
+        SearchListResponse res = youtubeClient.getSearchListResponse("정보처리기사");
+
+        String tmp2 = JacksonFactory.getDefaultInstance().toString(res);
+        System.out.println("========== tmp2 : )" + tmp2);
+        //searchListResponseToJsonFile(res);
+    }
 
     /*@Test
     public void testGetYoutubePlayListByMock(){
@@ -100,13 +100,6 @@ public class YoutubeTests {
             e.printStackTrace();
         }
     }
-
-    @Test
-    public void testUUUUUU(){
-        System.out.println("9 / 20 = " + 9 / 20);
-        System.out.println("0 % 20 = " + 0 % 20);
-    }
-
 
     @Test
     public void testGetVideoDTOListByPlayListId(){

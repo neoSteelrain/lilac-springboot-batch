@@ -20,11 +20,11 @@
 
     <insert id="insertYoutubeVideoList" useGeneratedKeys="true" keyProperty="id" parameterType="VideoDTO">
         INSERT IGNORE INTO tbl_youtube(channel_id,youtube_playlist_id,video_id,title,description,
-                                publish_date,thumbnail_medium,thumbnail_high,view_count,search_count,
+                                publish_date,thumbnail_default,thumbnail_medium,thumbnail_high,view_count,search_count,
                                 playlist_id,like_count,favorite_count,comment_count,duration,score,magnitude) VALUES
         <foreach item="item" collection="list" separator=",">
             (#{item.channelId},#{item.youtubePlaylistId},#{item.videoId},#{item.title},#{item.description},
-            #{item.publishDate},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.viewCount},#{item.searchCount},
+            #{item.publishDate},#{item.thumbnailDefault},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.viewCount},#{item.searchCount},
             #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.duration},#{item.score},#{item.magnitude})
         </foreach>
     </insert>
