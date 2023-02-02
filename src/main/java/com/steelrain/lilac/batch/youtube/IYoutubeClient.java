@@ -8,6 +8,7 @@ import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface IYoutubeClient {
     //SearchListResponse getYoutubePlayList(String keyword);
@@ -16,7 +17,6 @@ public interface IYoutubeClient {
     Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken);
     //PlaylistItemListResponse getVideoListByPlayListId(String playListId);
     List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId);
-
     List<YoutubeCommentDTO> getCommentList(String videoId) throws LilacYoutubeAPIException;
-    YoutubeChannelDTO getChannelInfo(String channelId);
+    Optional<YoutubeChannelDTO> getChannelInfo(String channelId);
 }

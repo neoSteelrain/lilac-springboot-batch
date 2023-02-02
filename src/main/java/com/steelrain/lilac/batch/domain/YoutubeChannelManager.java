@@ -39,7 +39,11 @@ public class YoutubeChannelManager {
                 if(m_chnDTOMap.containsKey(dto.getChannelIdOrigin())){
                     continue;
                 }
-                m_chnDTOMap.put(dto.getChannelIdOrigin(), m_youtubeClient.getChannelInfo(dto.getChannelIdOrigin()));
+                Optional<YoutubeChannelDTO> channelDTO = m_youtubeClient.getChannelInfo(dto.getChannelIdOrigin());
+                if(!channelDTO.isPresent()){
+                    continue;
+                }
+                m_chnDTOMap.put(dto.getChannelIdOrigin(), channelDTO.get());
             }
         }catch(LilacBatchException be){
             throw new LilacYoutubeDomainException(String.format("채널관리자 초기화중 예외 발생"), be);

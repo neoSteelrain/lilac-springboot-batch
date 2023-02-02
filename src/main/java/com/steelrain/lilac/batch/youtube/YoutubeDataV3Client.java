@@ -29,16 +29,20 @@ import java.util.*;
 public class YoutubeDataV3Client implements IYoutubeClient{
 
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    // 호출할때 마다 YouTube 객체를 생성하면 http connection time 발생하므로 static 으로 선언
+    private static YouTube YOUTUBE;
     private final APIConfig m_apiConfig;
 
     public YoutubeDataV3Client(APIConfig apiConfig){
         this.m_apiConfig = apiConfig;
+
+        initYoutubeObject();
     }
 
+    // 테스트 할때 할당량을 최대한 적게 쓰기 위해 테스트용도로만 만든 메서드
     public SearchListResponse getSearchListResponse(String keyword){
         try {
-            YouTube youtube = getYoutubeObject();
-            YouTube.Search.List request = youtube.search().list("id,snippet");
+            YouTube.Search.List request = YOUTUBE.search().list("id,snippet");
             request.setQ(keyword)
                     .setKey(m_apiConfig.getYoutubeKey())
                     .setType("playlist")
@@ -48,9 +52,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     .setPublishedAfter(DateTime.parseRfc3339("2022-01-01T00:00:00Z")) // The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
                     .setFields("items(id/kind,id/playlistId,snippet/channelId,snippet/thumbnails/high/url,snippet/thumbnails/medium/url,snippet/thumbnails/default/url,snippet/title,snippet/publishedAt,snippet/description,snippet/channelTitle),nextPageToken,pageInfo");
             return request.execute();
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -121,50 +123,74 @@ public class YoutubeDataV3Client implements IYoutubeClient{
     /*
         영상의 상세정보때문에 Videos API 호출할때 java.net.SocketTimeoutException: connect timed out 발생
         상세정보를 빼고 해본다.
+        재생목록에 몇개의 영상들이 있는지는 일단 한번 호출해봐야 알 수 있기 때문에 do while 로 루프를 돈다
      */
     @Override
     public List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId){
-        if(!StringUtils.hasText(playListId)){
+        if(!StringUtils.hasText(playListId) || YOUTUBE == null){
             return new ArrayList<>(0);
         }
-        // 재생목록에 중복된 영상이 들어갈 수 있므로 Map에 저장했다가 List로 리턴한다
+        // 재생목록에 중복된 영상이 들어갈 수 있므로 Map에 저장했다가 밸류값들만 List로 리턴한다
         Map<String, YoutubeVideoDTO> videoMap = null;
         String pageToken = null;
         boolean isExit = true;
         int cnt = 0;
         int pageCnt = 0;
+        // 영상의 상세정보 API의 파라미터로 넘길 "videoId,videoId,videoId..." 문자열을 만들어야 한다
+        StringBuilder videoIdBuilder = new StringBuilder(600); // 유튜브 video id 개수 * API 처리가능 ID 개수 + 콤마의 개수 == 11 * 50 + 49 , 넉넉하게 600으로 잡는다...
         try {
             do{
-                YouTube youtubeObj = getYoutubeObject();
-                YouTube.PlaylistItems.List request = youtubeObj.playlistItems().list("id,snippet,contentDetails,status");
-                PlaylistItemListResponse response = request.setMaxResults(50L)
+                YouTube.PlaylistItems.List request = YOUTUBE.playlistItems().list("id,snippet,contentDetails,status");
+                PlaylistItemListResponse response = request.setMaxResults(50L) // 한번에 최대 50개 까지만 지원
                         .setPlaylistId(playListId)
                         .setKey(m_apiConfig.getYoutubeKey())
                         .setPageToken(StringUtils.hasText(pageToken) ? pageToken : null)
                         .execute();
-
+                // 재생목록의 영상개수가 50개가 넘어가면 루프를 돌아야 하므로 몇번이나 돌아야 하는지 계산한다
                 if(pageCnt == 0){ // 처음 한번 호출할때만 초기화 작업을 한다
-                    int totalResults = response.getPageInfo().getTotalResults().intValue();
+                    int totalResults = response.getPageInfo().getTotalResults();
                     pageCnt = totalResults / 50;
-                    pageCnt = pageCnt + ((totalResults % 50) > 0  ? 1 : 0);
+                    pageCnt = pageCnt + ((totalResults % 50) > 0  ? 1 : 0); // 나머지를 구해서 한번더 돌아야 하는지 검사
                     videoMap = new HashMap<>(totalResults);
                 }
-                for(PlaylistItem item : response.getItems()){
-                    if(isNullablePlaylistItem(item)){
+                List<PlaylistItem> items = response.getItems(); // 영상의 상세정보를 얻기 위한 파라미터 만들기 시작
+                for(int i=0, size=items.size()-1 ; i <= size ; i++){
+                    PlaylistItem item = items.get(i);
+                    if(validateNullablePlaylistItem(item)){
                         continue;
                     }
                     // 재생목록에 있는 영상정보는 부족하므로 videoId 로 영상의 자세한정보를 API 호출로 가져온다
                     String videoId = item.getSnippet().getResourceId().getVideoId();
-//                    VideoListResponse videoListResponse = getVideoDetail(videoId);
-//                    if(isNullableVideoListResponse(videoListResponse)){
-//                        continue;
-//                    }
-                    if(videoMap.containsKey(videoId)){
+                    if(videoMap.containsKey(videoId)){ // 중복된 영상인가? 유튜브 재생목록에 가끔씩 같은영상이 중복되어 올라온다
                         continue;
                     }
-                    log.debug(String.format("\n========= 재생목록의 영상정보를 가져와서 초기화 시작 - 재생목록id : %s , 영상id : %s", playListId, videoId));
-                    log.debug(String.format("\n========= 영상정보 - id : %s , toString : %s", videoId, item.toPrettyString()));
-                    videoMap.put(videoId, YoutubeVideoDTO.convertYoutubeVideoDTOnoDetail(item));
+                    videoIdBuilder.append(videoId);
+                    if(i == size){
+                        continue;
+                    }
+                    videoIdBuilder.append(",");
+                } // 영상의 상세정보를 얻기 위한 파라미터 만들기 끝
+                VideoListResponse videoDetailResponse = getVideoDetail(videoIdBuilder.toString());
+                videoIdBuilder.setLength(0);
+                if(validateNullableVideoDetailResponse(videoDetailResponse)){ // 영상목록이 null 이면 true, 아니면 false
+                    continue;
+                }
+                List<Video> videoList = videoDetailResponse.getItems();
+                for (Video video : videoList) {
+                    log.debug(String.format("\n========= 재생목록의 영상정보를 가져와서 초기화 시작 - 재생목록id : %s , 영상id : %s", playListId, video.getId()));
+                    log.debug(String.format("\n========= 상세정보 가져오기 이전의 영상정보 - id : %s , toString : %s", video.getId(), video.toPrettyString()));
+                    Optional<YoutubeVideoDTO> dto = convertVideoToDTO(video, playListId);
+                    if(dto.isPresent()) {
+                        videoMap.put(video.getId(), dto.get());
+                    }
+//                    if(!videoMap.containsKey(video.getId())){
+//                        log.debug(String.format("\n========= 재생목록의 영상정보를 가져와서 초기화 시작 - 재생목록id : %s , 영상id : %s", playListId, video.getId()));
+//                        log.debug(String.format("\n========= 상세정보 가져오기 이전의 영상정보 - id : %s , toString : %s", video.getId(), video.toPrettyString()));
+//                        Optional<YoutubeVideoDTO> dto = convertVideoToDTO(video, playListId);
+//                        if(dto.isPresent()){
+//                            videoMap.put(video.getId(), dto.get());
+//                        }
+//                    }
                 }
                 if(cnt < pageCnt){ // 페이징을 해야할지 안할지 체크해서 페이지가 남아있으면 페이징토큰을 얻어오고 아니면 1번만 돌고 종료
                     pageToken = response.getNextPageToken();
@@ -173,7 +199,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 }
                 ++cnt;
             } while(isExit);
-        } catch (IOException | GeneralSecurityException e) {
+        } catch (IOException e) {
             log.error(String.format("유튜브 재생목록의 영상조회 도중 예외 발생 - playListId : %s", playListId), e);
             //throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, playListId);
             if(videoMap.size() == 0){
@@ -184,80 +210,36 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         return new ArrayList<>(videoMap.values());
     }
 
-    /*
-        재생목록에 있는 모든영상을 가져온다
-        중복된 영상이 재생목록에 있을 수 있으므로 걸러내야 한다
-     */
-//    @Override
-//    public List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId){
-//        if(!StringUtils.hasText(playListId)){
-//            return new ArrayList<>(0);
-//        }
-//        // 재생목록에 중복된 영상이 들어갈 수 있므로 Map에 저장했다가 List로 리턴한다
-//        Map<String, YoutubeVideoDTO> videoMap = null;
-//        String pageToken = null;
-//        boolean isExit = true;
-//        int cnt = 0;
-//        int pageCnt = 0;
-//        try {
-//            do{
-//                YouTube youtubeObj = getYoutubeObject();
-//                YouTube.PlaylistItems.List request = youtubeObj.playlistItems().list("id,snippet,contentDetails,status");
-//                PlaylistItemListResponse response = request.setMaxResults(50L)
-//                        .setPlaylistId(playListId)
-//                        .setKey(m_apiConfig.getYoutubeKey())
-//                        .setPageToken(StringUtils.hasText(pageToken) ? pageToken : null)
-//                        .execute();
-//
-//                if(pageCnt == 0){ // 처음 한번 호출할때만 초기화 작업을 한다
-//                    int totalResults = response.getPageInfo().getTotalResults().intValue();
-//                    pageCnt = totalResults / 50;
-//                    pageCnt = pageCnt + ((totalResults % 50) > 0  ? 1 : 0);
-//                    videoMap = new HashMap<>(totalResults);
-//                }
-//                for(PlaylistItem item : response.getItems()){
-//                    if(isNullablePlaylistItem(item)){
-//                        continue;
-//                    }
-//                    // 재생목록에 있는 영상정보는 부족하므로 videoId 로 영상의 자세한정보를 API 호출로 가져온다
-//                    String videoId = item.getContentDetails().getVideoId();
-//                    VideoListResponse videoListResponse = getVideoDetail(videoId);
-//                    if(isNullableVideoListResponse(videoListResponse)){
-//                        continue;
-//                    }
-//                    if(videoMap.containsKey(videoId)){
-//                        continue;
-//                    }
-//                    videoMap.put(videoId, YoutubeVideoDTO.convertYoutubeVideoDTO(item, videoListResponse.getItems().get(0)));
-//                }
-//                if(cnt < pageCnt){ // 페이징을 해야할지 안할지 체크해서 페이지가 남아있으면 페이징토큰을 얻어오고 아니면 1번만 돌고 종료
-//                    pageToken = response.getNextPageToken();
-//                }else{
-//                    isExit = false;
-//                }
-//                ++cnt;
-//            } while(isExit);
-//        } catch (IOException | GeneralSecurityException e) {
-//            log.error(String.format("유튜브 재생목록의 영상조회 도중 예외 발생 - playListId : %s", playListId), e);
-//            //throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, playListId);
-//            if(videoMap.size() == 0){
-//                return new ArrayList<>(0);
-//            }
-//        }
-//        log.debug(String.format("\n===== 재생목록 : %s 의 영상갯수 : %d : ", playListId, videoMap.values().size()));
-//        return new ArrayList<>(videoMap.values());
-//    }
+    private Optional<YoutubeVideoDTO> convertVideoToDTO(Video video, String playlistId){
+        if(video.getSnippet() == null || video.getContentDetails() == null || video.getStatistics() == null){
+            return Optional.empty();
+        }
+        YoutubeVideoDTO dto = new YoutubeVideoDTO();
+        dto.setVideoId(video.getId());
+        dto.setTitle(video.getSnippet().getTitle());
+        dto.setPlaylistId(playlistId);
+        dto.setPublishDate(new Timestamp(video.getSnippet().getPublishedAt().getValue()));
+        dto.setThumbnailDefault(video.getSnippet().getThumbnails().getDefault().getUrl());
+        dto.setThumbnailMedium(video.getSnippet().getThumbnails().getMedium().getUrl());
+        dto.setThumbnailHigh(video.getSnippet().getThumbnails().getHigh().getUrl());
+
+        dto.setViewCount(video.getStatistics().getViewCount() == null ? 0 : video.getStatistics().getViewCount().longValue());
+        dto.setDescription(video.getSnippet().getDescription());
+        dto.setLikeCount(video.getStatistics().getLikeCount() == null ? 0 : video.getStatistics().getLikeCount().longValue());
+        dto.setFavoriteCount(video.getStatistics().getFavoriteCount() == null ? 0 : video.getStatistics().getFavoriteCount().longValue());
+        dto.setDuration(video.getContentDetails().getDuration());
+        return Optional.of(dto);
+    }
 
     // 유튜브API를 통해 유튜브 영상의 댓글리스트를 가져온다.
     @Override
     public List<YoutubeCommentDTO> getCommentList(String videoId) {
-        if(!StringUtils.hasText(videoId)){
+        if(!StringUtils.hasText(videoId) || YOUTUBE == null){
             return new ArrayList<>(0);
         }
         List<YoutubeCommentDTO> commentList = null;
         try {
-            YouTube youTube = getYoutubeObject();
-            YouTube.CommentThreads.List request = youTube.commentThreads()
+            YouTube.CommentThreads.List request = YOUTUBE.commentThreads()
                     .list("snippet,replies");
             CommentThreadListResponse apiResponse = request.setKey(m_apiConfig.getYoutubeKey())
                     .setMaxResults(m_apiConfig.getCommentCount())
@@ -316,7 +298,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             }else{
                 log.error(String.format("영상의 댓글리스트 가져오기 예외 - videoId : %s , Youtube 댓글에러코드 : %d", videoId, ge.getStatusCode()), ge);
             }
-        } catch (IOException | GeneralSecurityException e) {
+        } catch (IOException e) {
             if(commentList == null){
                 commentList = new ArrayList<>(0);
             }
@@ -326,12 +308,14 @@ public class YoutubeDataV3Client implements IYoutubeClient{
     }
 
     @Override
-    public YoutubeChannelDTO getChannelInfo(String channelId) {
+    public Optional<YoutubeChannelDTO> getChannelInfo(String channelId) {
+        if(!StringUtils.hasText(channelId) || YOUTUBE ==null){
+            return Optional.empty();
+        }
         // 테스트 채널 id :  UCZD_mSIrG7VC4Im2lOMZMmQ
         YoutubeChannelDTO resultDTO = null;
         try {
-            YouTube youTubeObj = getYoutubeObject();
-            YouTube.Channels.List request = youTubeObj.channels()
+            YouTube.Channels.List request = YOUTUBE.channels()
                     .list("brandingSettings,contentDetails,id,snippet,statistics,status,topicDetails");
             ChannelListResponse response = request.setKey(m_apiConfig.getYoutubeKey()).setId(channelId).execute();
             /*
@@ -360,59 +344,58 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     .thumbnailMedium(response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl())
                     .thumbnailHigh(response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl())
                     .build();
-        } catch (IOException | GeneralSecurityException e) {
+        } catch (IOException e) {
             throw new LilacYoutubeAPIException("채널 정보 가져오기 예외", e, channelId);
         }
-        return resultDTO;
+        return Optional.ofNullable(resultDTO);
     }
 
-    // 재생목록에 있는 영상정보의 유효성 체크, null 이면 true 아니면 false
-    private boolean isNullablePlaylistItem(PlaylistItem item){
-        return item.getSnippet() == null || item.getContentDetails() == null || !"public".equals(item.getStatus().getPrivacyStatus());
+    /*
+     재생목록에 있는 영상정보의 유효성 체크, null 이면 true 아니면 false
+     검증 순서 : 비공개 영상인지 체크, snippet, contentDetails 속성이 있는지,
+     */
+    private boolean validateNullablePlaylistItem(PlaylistItem item){
+        return item.getStatus() == null ||
+                !"public".equals(item.getStatus().getPrivacyStatus()) ||
+                item.getSnippet() == null ||
+                item.getContentDetails() == null;
     }
 
-    // 영상의 상제정보의 유효성 체크, null 이면 true 아니면 false
-    private boolean isNullableVideoListResponse(VideoListResponse videoInfo){
-        if(videoInfo.getItems() != null && videoInfo.getItems().size() == 0) {
-            return true;
+    // 영상의 상제정보의 유효성 체크, 영상목록이 없으면 true , 영상목록이 있으면 false
+    private boolean validateNullableVideoDetailResponse(VideoListResponse videoInfo){
+        return videoInfo.getItems() == null || videoInfo.getItems().size() == 0;
+    }
+
+    // 댓글금지 영상인지 검사하는 메서드, 댓글금지 이면 true, 댓글금지가 아니면 false
+    private boolean validateDisableCommentVideo(Video video) {
+        return video.getStatistics() == null || video.getStatistics().getCommentCount() == null;
+    }
+
+    // 유튜브API의 클라이언트 객체를 초기화
+    private static void initYoutubeObject() {
+        try {
+            YOUTUBE = new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, new HttpRequestInitializer() {
+                public void initialize(HttpRequest request) throws IOException {
+                }
+            }).setApplicationName("lilac").build();
+        }catch(GeneralSecurityException gse){
+            log.error("YouTube 객체 초기화 도중 예외 발생 : {}", gse);
+        }catch (IOException ioe){
+            log.error("YouTube 객체 초기화 도중 예외 발생 : {}", ioe);
         }
-
-//        if(videoInfo.getStatistics().getCommentCount() == null){
-//            return null;
-//        }
-
-        Video video = videoInfo.getItems().get(0); // 영상의 상세정보는 List 형식이지만 실제로는 1개만 반환하기 때문에 0번째 요소만 가져와도 된다.
-
-        // 댓글금지 영상을 체크하는 부분
-        if(video.getStatistics() == null){
-            return true;
-        }else{
-            if(video.getStatistics().getCommentCount() == null)
-                return true;
-        }
-        return video.getSnippet() == null || video.getContentDetails()  == null;
-    }
-
-    // 유튜브API의 클라이언트 객체를 반환한다
-    private YouTube getYoutubeObject() throws GeneralSecurityException, IOException {
-        return new YouTube.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, new HttpRequestInitializer() {
-            public void initialize(HttpRequest request) throws IOException {
-            }
-        }).setApplicationName("lilac").build();
     }
 
 
     // 유튜브 영상의 상세정보를 반환한다
     private VideoListResponse getVideoDetail(String videoId){
-        // 테스트용 영상id : JhKOsZuMDWs
+        log.debug(String.format("\n========= getVideoDetail 파라미터 : %s", videoId));
         try {
-            YouTube youTubeObj = getYoutubeObject();
-            YouTube.Videos.List request = youTubeObj.videos()
+            YouTube.Videos.List request = YOUTUBE.videos()
                     .list("snippet,contentDetails,statistics");
             return request.setId(videoId).setKey(m_apiConfig.getYoutubeKey()).execute();
 
-        } catch (IOException | GeneralSecurityException e) {
-            throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, videoId);
+        } catch (IOException e) {
+            throw new LilacYoutubeAPIException("유튜브 재생목록 영상의 상제정보조회 도중 예외 발생", e, videoId);
         }
     }
 
