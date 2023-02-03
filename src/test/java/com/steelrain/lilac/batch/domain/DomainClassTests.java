@@ -47,12 +47,7 @@ public class DomainClassTests {
     @Test
     @DisplayName("댓글목록 NPE 발생 테스트")
     public void testCommentListNPE(){
-        /*
-        for(YoutubeCommentDTO dto : video.getComments()) { //  TODO : NPE
-            dto.setYoutubeId(video.getId());
-            dto.setChannelId(channelDTO.getId());
-        }
-         */
+
         // 길이가 0인 리스트에 접근했을때 NPE 가 발생하는지 테스트한다.
         List<YoutubeCommentDTO> comments = new ArrayList<>(0);
         for(YoutubeCommentDTO dto : comments){

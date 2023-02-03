@@ -14,7 +14,7 @@ public class CommentByteCounter {
     private int m_totalByteCount;
     
     // 댓글을 저장하는 버퍼
-    private StringBuilder m_sb = new StringBuilder(1000);
+    private static StringBuilder m_sb = new StringBuilder(1000);
 
 
     // 문자열을 내부 버퍼에 합친다.

@@ -29,6 +29,9 @@ public class APIConfiguration {
     @Value("${exclusive.channels}")
     private String m_exclusiveChannels;
 
+    @Value("${search.publish.date}")
+    private String m_searchPublishDate;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
         return new PropertySourcesPlaceholderConfigurer();
@@ -36,6 +39,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize, m_exclusiveChannels);
+        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize, m_exclusiveChannels, m_searchPublishDate);
     }
 }

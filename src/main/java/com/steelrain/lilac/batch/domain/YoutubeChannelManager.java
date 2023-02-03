@@ -12,8 +12,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
+/**
+ * 유튜브 채널정보를 관리하는 클래스
+ * - DB에서 채널정보 읽기
+ * - 채널정보 저장
+ * - 재생목록에 채널정보 설정
+ */
 @Slf4j
 @Component
 public class YoutubeChannelManager {

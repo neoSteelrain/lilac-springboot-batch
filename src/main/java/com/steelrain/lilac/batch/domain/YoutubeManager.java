@@ -16,18 +16,18 @@ import java.util.*;
 /**
  * 유튜브 배치작업의 퍼사드
  * - 작업내용 및 순서
- *  1. 미리등록된 키워드 (subject, license)로 Search.list 메서드를 호출한다
+ *  1. 미리등록된 키워드 (subject, license)로 재생목록을 검색한다
  *  2. 결과중에서 playlistId 가 있는 영상만 추출한다
  *  3. 추출된 영상의 playlistId 를 가지고 PlaylistItem 메서드로 해당 재생목록의 모든 영상을 가져온다
  *  4. 재생목록에 속한 영상들의 코멘트들을 전부 가져온다
- *  5. 코멘트들에 감정분석을 적용해서 긍정수치가 70% 이상(또는 부정보다는 긍정이 높은) 이라면 영상정보, 재생목록정보, 채널정보를 DB에 저장한다
+ *  5. 코멘트들에 감정분석을 적용해서 긍정수치가 설정파일에 설정된 수치와 같거나 크다면 영상정보, 재생목록정보, 채널정보를 DB에 저장한다
  * - 사용자에게 제공하는 검색서비스는 DB에 저장된 재생목록의 제목을 대상으로 하거나, 개별적인 영상들의 제목을 검색하게 된다.
  *
  * - DB 저장순서
- * 1. 재생목록정보
- * 2. 채널정보
- * 3. 영상정보
- * 4. 코멘트정보
+ * 1.채널정보
+ * 2.재생목록정보
+ * 3.영상정보
+ * 4.코멘트정보
  */
 @Slf4j
 @Component
@@ -59,7 +59,7 @@ public class YoutubeManager {
 
     @Transactional
     public void doYoutubeBatch(){
-        //doSubjectBatch();
+        doSubjectBatch();
         doLicenseBatch();
     }
 
@@ -75,17 +75,19 @@ public class YoutubeManager {
         }
     }
 
-//    private void doSubjectBatch(){
-//        List<KeywordSubjectDTO> subjectList = m_keywordManager.getSubjectList();
-//        for (KeywordSubjectDTO subjectDTO : subjectList){
-//            String pageToken = fetchYoutubeData(subjectDTO.getKeyWord(), subjectDTO.getPageToken());
-//            SubjectBatchResultDTO batchResultDTO = SubjectBatchResultDTO.builder()
-//                    .id(subjectDTO.getId())
-//                    .pageToken(pageToken)
-//                    .build();
-//            m_keywordManager.updateSubjectPageToken(batchResultDTO);
-//        }
-//    }
+    private void doSubjectBatch(){
+        List<KeywordSubjectDTO> subjectList = m_keywordManager.getSubjectList();
+        for (KeywordSubjectDTO subjectDTO : subjectList){
+            String pageToken = fetchYoutubeData(subjectDTO.getKeyWord(), subjectDTO.getPageToken(), null);
+            SubjectBatchResultDTO batchResultDTO = SubjectBatchResultDTO.builder()
+                    .id(subjectDTO.getId())
+                    .pageToken(pageToken)
+                    .build();
+            m_keywordManager.updateSubjectPageToken(batchResultDTO);
+        }
+    }
+
+
 
     /*
         keyword : 검색어
@@ -113,11 +115,11 @@ public class YoutubeManager {
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
         }
-        // TODO : 테스트용 코드
-        playLists.stream().forEach(dto -> {
-            log.debug("\n============ insert 전 재생목록 ===========");
-            log.debug(String.format("\n============ 재생목록 정보 : %s", dto.toString()));
-        });
+//        // TODO : 테스트용 코드
+//        playLists.stream().forEach(dto -> {
+//            log.debug("\n============ insert 전 재생목록 ===========");
+//            log.debug(String.format("\n============ 재생목록 정보 : %s", dto.toString()));
+//        });
 
         m_youtubeRepository.savePlayList(playLists);
         for(YoutubePlayListDTO playlistDTO : playLists){

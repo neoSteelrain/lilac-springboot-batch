@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * DB에 검색어로 등록된 키워드를 관리하는 클래스 
+ */
 @Component
 public class KeywordManager {
     private final KeywordMapper m_keywordMapper;
