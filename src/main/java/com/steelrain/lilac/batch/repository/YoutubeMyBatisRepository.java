@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Youtube API들로 데이터를 가져오고, 구글 감정분석 API를 사용해서 필터링한 데이터들을 MyBatis 를 통해 DB에 저장하는 클래스
+ * Youtube API로 데이터를 가져오고, 구글 감정분석 API를 사용해서 필터링한 데이터들을 MyBatis 를 통해 DB에 저장하는 클래스
  */
 @Component
 public class YoutubeMyBatisRepository implements IYoutubeRepository {
@@ -33,6 +33,11 @@ public class YoutubeMyBatisRepository implements IYoutubeRepository {
     }
 
     @Override
+    public int saveChannel(YoutubeChannelDTO chnDTO) {
+        return m_youtubeMapper.insertYoutubeChannel(chnDTO);
+    }
+
+    @Override
     public int saveVideoList(List<YoutubeVideoDTO> videoList) {
         return m_youtubeMapper.insertYoutubeVideoList(videoList);
     }
@@ -48,5 +53,10 @@ public class YoutubeMyBatisRepository implements IYoutubeRepository {
     @Override
     public List<YoutubeChannelDTO> getChannelList(List<String> chnIdList) {
         return m_youtubeMapper.selectChannelList(chnIdList);
+    }
+
+    @Override
+    public List<YoutubeChannelDTO> findAllYoutubeChannels() {
+        return m_youtubeMapper.findAllYoutubeChannels();
     }
 }

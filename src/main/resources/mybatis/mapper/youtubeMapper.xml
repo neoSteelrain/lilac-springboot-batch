@@ -11,6 +11,13 @@
         </foreach>
     </insert>
 
+    <insert id="insertYoutubeChannel" useGeneratedKeys="true" keyProperty="id" parameterType="ChannelDTO">
+        INSERT IGNORE INTO tbl_youtube_channel(channel_id, title, description, publish_date, view_count,
+                                        subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high) VALUE
+            (#{channelId},#{title},#{description},#{publishDate},#{viewCount},
+             #{subscriberCount},#{subscriberCountHidden},#{videoCount},#{brandingKeywords},#{thumbnailMedium},#{thumbnailHigh})
+    </insert>
+
     <insert id="insertYoutubePlaylist" useGeneratedKeys="true" keyProperty="id" parameterType="PlayListDTO">
         INSERT INTO tbl_youtube_playlist(playlist_id,channel_id,title,publish_date,thumbnail_medium,thumbnail_high,item_count) VALUES
         <foreach item="item" collection="list" separator=",">
@@ -21,11 +28,11 @@
     <insert id="insertYoutubeVideoList" useGeneratedKeys="true" keyProperty="id" parameterType="VideoDTO">
         INSERT IGNORE INTO tbl_youtube(channel_id,youtube_playlist_id,video_id,title,description,
                                 publish_date,thumbnail_default,thumbnail_medium,thumbnail_high,view_count,search_count,
-                                playlist_id,like_count,favorite_count,comment_count,duration,score,magnitude) VALUES
+                                playlist_id,like_count,favorite_count,comment_count,comment_disabled,duration,score,magnitude) VALUES
         <foreach item="item" collection="list" separator=",">
             (#{item.channelId},#{item.youtubePlaylistId},#{item.videoId},#{item.title},#{item.description},
             #{item.publishDate},#{item.thumbnailDefault},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.viewCount},#{item.searchCount},
-            #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.duration},#{item.score},#{item.magnitude})
+            #{item.playlistId},#{item.likeCount},#{item.favoriteCount},#{item.commentCount},#{item.commentDisabled},#{item.duration},#{item.score},#{item.magnitude})
         </foreach>
     </insert>
 

@@ -34,7 +34,7 @@ public class KeywordManager {
         return m_keywordMapper.udpateSubjectPageToken(batchResultDTO) > 0;
     }
 
-    public boolean udpateLicensePageToken(LicenseBatchResultDTO batchResultDTO){
+    public boolean updateLicensePageToken(LicenseBatchResultDTO batchResultDTO){
         return m_keywordMapper.updateLicensePageToken(batchResultDTO) > 0;
     }
 }

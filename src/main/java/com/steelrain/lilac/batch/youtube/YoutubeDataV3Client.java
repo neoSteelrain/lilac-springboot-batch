@@ -64,8 +64,8 @@ public class YoutubeDataV3Client implements IYoutubeClient{
      * @return 재생목록, 페이지 토큰 Map, YoutubePlayListMapKey 클래스의 상수값을 키로 사용한다
      */
     @Override
-    public Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken) {
-        // 페지지토큰은 따로 검사를 하지 않는다. null 이면 가져올 페이지가 없는것이고 null 이 아니면 페이지가 있는것
+    public Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken, String[] exclusiveChannels) {
+        // 페지지토큰은 따로 검사를 하지 않는다. null 이면 첫페이지 null 이 아니면 다음페이지가 있는것
         if(!StringUtils.hasText(keyword)){
             Map<String, Object> nullKeywordResult = new HashMap<>(2);
             nullKeywordResult.put(YoutubePlayListMapKey.PLAY_LIST, new ArrayList(0));
@@ -76,21 +76,21 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         SearchListResponse apiResponse = null; // 실제 유튜브 API 응답객체
         try{
             // 개발용 임시 재생목록 json 문자열
-            String tmp = getTmpLicenseString();
+//            String tmp = getTmpLicenseString();
 //            String tmp = getTestSubjectListStr();
-            apiResponse = JacksonFactory.getDefaultInstance().fromString(tmp, SearchListResponse.class); // 테스트용 재생목록 객체를 얻기 위한 역직렬화
+//            apiResponse = JacksonFactory.getDefaultInstance().fromString(tmp, SearchListResponse.class); // 테스트용 재생목록 객체를 얻기 위한 역직렬화
 
-            /*YouTube youtube = getYoutubeObject(); // 실제 코드
-            YouTube.Search.List request = youtube.search().list("id,snippet");
+            // 실제 코드
+            YouTube.Search.List request = YOUTUBE.search().list("id,snippet");
             request.setQ(keyword)
                     .setKey(m_apiConfig.getYoutubeKey())
                     .setType("playlist")
-                    .setMaxResults(2L)
-                    .setPageToken(StringUtils.hasText(paramToken) ? null : paramToken)
+                    .setMaxResults(m_apiConfig.getPlaylistFetchSize())
+                    .setPageToken(StringUtils.hasText(paramToken) ? paramToken : null)
                     //.setOrder("date")
                     .setPublishedAfter(DateTime.parseRfc3339("2022-01-01T00:00:00Z")) // The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
                     .setFields("items(id/kind,id/playlistId,snippet/channelId,snippet/thumbnails/high/url,snippet/thumbnails/medium/url,snippet/thumbnails/default/url,snippet/title,snippet/publishedAt,snippet/description,snippet/channelTitle),nextPageToken,pageInfo");
-            apiResponse = request.execute();*/
+            apiResponse = request.execute();
 
             if(apiResponse == null || (apiResponse != null && apiResponse.getItems().size() == 0)){
                 Map<String, Object> nullResponseResult = new HashMap<>(2);
@@ -98,16 +98,14 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 nullResponseResult.put(YoutubePlayListMapKey.PAGE_TOKEN, null);
                 return nullResponseResult;
             }
+            int removedCnt = removeExclusiveChannels(exclusiveChannels, apiResponse.getItems());
+            log.debug(String.format("\n========== 제거된 채널 수 : %d ============", removedCnt));
             playList = new ArrayList<>(apiResponse.getItems().size());
             for (SearchResult sr : apiResponse.getItems()) {
-                if (sr.isEmpty()) {
+                if (sr.isEmpty() || !StringUtils.hasText(sr.getId().getPlaylistId())) {
                     continue;
                 }
-                String playListId = sr.getId().getPlaylistId();
-                if (!StringUtils.hasText(playListId)) {
-                    continue;
-                }
-                YoutubePlayListDTO dto = YoutubePlayListDTO.convertToYoutubePlayListDTO(sr);
+                YoutubePlayListDTO dto = convertToYoutubePlayListDTO(sr);
                 playList.add(dto);
             }
         }catch (IOException ioe){
@@ -120,10 +118,50 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         return resultMap;
     }
 
+    private int removeExclusiveChannels(String[] channels, List<SearchResult> originList){
+        if(channels == null | channels.length == 0){
+            return 0;
+        }
+        Iterator<SearchResult> iterator = originList.iterator();
+        int removedCnt = 0;
+        while(iterator.hasNext()){
+            for (String channel : channels){
+                SearchResult sr = iterator.next();
+                if(channel.equals(sr.getSnippet().getChannelId())){
+                    log.debug(String.format("삭제할 채널 id : %s , 이름 : %s", sr.getSnippet().getChannelId(), sr.getSnippet().getChannelTitle()));
+                    iterator.remove();
+                    ++removedCnt;
+                }
+            }
+        }
+        return removedCnt;
+    }
+/*
+    private Long id;
+    public String playListId;
+    private Long channelId; // 채널 테이블 FK
+    private String title;
+    private Timestamp publishDate;
+    private String thumbnailMedium;
+    private String thumbnailHigh;
+    private Integer itemCount;
+    private String channelIdOrigin; // API응답에서 반환된 채널ID 문자열
+ */
+    private YoutubePlayListDTO convertToYoutubePlayListDTO(SearchResult sr){
+        YoutubePlayListDTO dto = new YoutubePlayListDTO();
+        dto.setPlayListId(sr.getId().getPlaylistId());
+        dto.setTitle(sr.getSnippet().getTitle());
+        dto.setPublishDate(new Timestamp(sr.getSnippet().getPublishedAt().getValue()));
+        dto.setThumbnailMedium(sr.getSnippet().getThumbnails().getMedium().getUrl());
+        dto.setThumbnailHigh(sr.getSnippet().getThumbnails().getHigh().getUrl());
+        dto.setChannelIdOrigin(sr.getSnippet().getChannelId());
+        // itemCount는 재생목록의 영상들을 가져와야 알 수 있음.
+        return dto;
+    }
+
     /*
-        영상의 상세정보때문에 Videos API 호출할때 java.net.SocketTimeoutException: connect timed out 발생
-        상세정보를 빼고 해본다.
         재생목록에 몇개의 영상들이 있는지는 일단 한번 호출해봐야 알 수 있기 때문에 do while 로 루프를 돈다
+        비공개 영상은 영상정보가 없기 때문에 걸러낸다
      */
     @Override
     public List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId){
@@ -140,36 +178,36 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         StringBuilder videoIdBuilder = new StringBuilder(600); // 유튜브 video id 개수 * API 처리가능 ID 개수 + 콤마의 개수 == 11 * 50 + 49 , 넉넉하게 600으로 잡는다...
         try {
             do{
-                YouTube.PlaylistItems.List request = YOUTUBE.playlistItems().list("id,snippet,contentDetails,status");
-                PlaylistItemListResponse response = request.setMaxResults(50L) // 한번에 최대 50개 까지만 지원
+                //YouTube.PlaylistItems.List plRequest = YOUTUBE.playlistItems().list("id,snippet,contentDetails,status");
+                YouTube.PlaylistItems.List plRequest = YOUTUBE.playlistItems().list("id,snippet,status"); // 따로 상세정보 조회를 하기때문에 contentDetails 는 필요없음
+                PlaylistItemListResponse plResponse = plRequest.setMaxResults(50L) // 한번에 최대 50개 까지만 지원
                         .setPlaylistId(playListId)
                         .setKey(m_apiConfig.getYoutubeKey())
                         .setPageToken(StringUtils.hasText(pageToken) ? pageToken : null)
                         .execute();
-                // 재생목록의 영상개수가 50개가 넘어가면 루프를 돌아야 하므로 몇번이나 돌아야 하는지 계산한다
                 if(pageCnt == 0){ // 처음 한번 호출할때만 초기화 작업을 한다
-                    int totalResults = response.getPageInfo().getTotalResults();
-                    pageCnt = totalResults / 50;
+                    int totalResults = plResponse.getPageInfo().getTotalResults();
+                    pageCnt = totalResults / 50;  //  재생목록 looping count 계산시작 : 재생목록의 영상개수가 50개가 넘어가면 루프를 돌아야 하므로 몇번이나 돌아야 하는지 계산한다
                     pageCnt = pageCnt + ((totalResults % 50) > 0  ? 1 : 0); // 나머지를 구해서 한번더 돌아야 하는지 검사
                     videoMap = new HashMap<>(totalResults);
-                }
-                List<PlaylistItem> items = response.getItems(); // 영상의 상세정보를 얻기 위한 파라미터 만들기 시작
+
+                    log.debug(String.format("\n전체 영상개수 : %d", totalResults));
+                    log.debug(String.format("\n페이징할 페이지개수 : %d", pageCnt));
+                }// 재생목록 looping count 계산 끝
+                List<PlaylistItem> items = plResponse.getItems(); // 영상의 상세정보를 얻기 위한 파라미터 만들기 시작
                 for(int i=0, size=items.size()-1 ; i <= size ; i++){
                     PlaylistItem item = items.get(i);
-                    if(validateNullablePlaylistItem(item)){
+                    if(validateNullablePlaylistItem(item)){ // 영상정보가 null 인것, 비공개영상들을 걸러낸다
                         continue;
                     }
-                    // 재생목록에 있는 영상정보는 부족하므로 videoId 로 영상의 자세한정보를 API 호출로 가져온다
                     String videoId = item.getSnippet().getResourceId().getVideoId();
-                    if(videoMap.containsKey(videoId)){ // 중복된 영상인가? 유튜브 재생목록에 가끔씩 같은영상이 중복되어 올라온다
-                        continue;
-                    }
                     videoIdBuilder.append(videoId);
                     if(i == size){
                         continue;
                     }
                     videoIdBuilder.append(",");
                 } // 영상의 상세정보를 얻기 위한 파라미터 만들기 끝
+                // 재생목록에 있는 영상정보는 부족하므로 videoId 로 영상의 자세한정보를 API 호출로 가져온다. 영상의 상세정보를 API로 얻어오기 시작
                 VideoListResponse videoDetailResponse = getVideoDetail(videoIdBuilder.toString());
                 videoIdBuilder.setLength(0);
                 if(validateNullableVideoDetailResponse(videoDetailResponse)){ // 영상목록이 null 이면 true, 아니면 false
@@ -180,20 +218,12 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     log.debug(String.format("\n========= 재생목록의 영상정보를 가져와서 초기화 시작 - 재생목록id : %s , 영상id : %s", playListId, video.getId()));
                     log.debug(String.format("\n========= 상세정보 가져오기 이전의 영상정보 - id : %s , toString : %s", video.getId(), video.toPrettyString()));
                     Optional<YoutubeVideoDTO> dto = convertVideoToDTO(video, playListId);
-                    if(dto.isPresent()) {
+                    if(dto.isPresent() && !videoMap.containsKey(video.getId())) { // 중복된 영상인가? 유튜브 재생목록에 가끔씩 같은영상이 중복되어 올라온다
                         videoMap.put(video.getId(), dto.get());
                     }
-//                    if(!videoMap.containsKey(video.getId())){
-//                        log.debug(String.format("\n========= 재생목록의 영상정보를 가져와서 초기화 시작 - 재생목록id : %s , 영상id : %s", playListId, video.getId()));
-//                        log.debug(String.format("\n========= 상세정보 가져오기 이전의 영상정보 - id : %s , toString : %s", video.getId(), video.toPrettyString()));
-//                        Optional<YoutubeVideoDTO> dto = convertVideoToDTO(video, playListId);
-//                        if(dto.isPresent()){
-//                            videoMap.put(video.getId(), dto.get());
-//                        }
-//                    }
-                }
+                }// 영상의 상세정보를 API로 얻어오기 끝
                 if(cnt < pageCnt){ // 페이징을 해야할지 안할지 체크해서 페이지가 남아있으면 페이징토큰을 얻어오고 아니면 1번만 돌고 종료
-                    pageToken = response.getNextPageToken();
+                    pageToken = plResponse.getNextPageToken();
                 }else{
                     isExit = false;
                 }
@@ -227,7 +257,11 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         dto.setDescription(video.getSnippet().getDescription());
         dto.setLikeCount(video.getStatistics().getLikeCount() == null ? 0 : video.getStatistics().getLikeCount().longValue());
         dto.setFavoriteCount(video.getStatistics().getFavoriteCount() == null ? 0 : video.getStatistics().getFavoriteCount().longValue());
+        boolean isCommentDisabled = validateDisableCommentVideo(video);
+        dto.setCommentDisabled(isCommentDisabled);
+        dto.setCommentCount(isCommentDisabled ? 0 : video.getStatistics().getCommentCount().longValue());
         dto.setDuration(video.getContentDetails().getDuration());
+
         return Optional.of(dto);
     }
 
@@ -254,8 +288,9 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             commentList = new ArrayList<>(threadsList.size());
 
             for(CommentThread thread : threadsList){
-                if(thread.getSnippet() == null && thread.getSnippet().getTopLevelComment() == null &&
-                        thread.getSnippet().getTopLevelComment().getSnippet() == null){
+                if(thread.getSnippet() == null ||
+                   thread.getSnippet().getTopLevelComment() == null ||
+                   thread.getSnippet().getTopLevelComment().getSnippet() == null){
                     continue;
                 }
                 /*
@@ -352,13 +387,12 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
     /*
      재생목록에 있는 영상정보의 유효성 체크, null 이면 true 아니면 false
-     검증 순서 : 비공개 영상인지 체크, snippet, contentDetails 속성이 있는지,
+     검증 순서 : 비공개 영상인지 체크, snippet, status 속성이 있는지,
      */
     private boolean validateNullablePlaylistItem(PlaylistItem item){
-        return item.getStatus() == null ||
-                !"public".equals(item.getStatus().getPrivacyStatus()) ||
-                item.getSnippet() == null ||
-                item.getContentDetails() == null;
+        return !"public".equals(item.getStatus().getPrivacyStatus()) ||
+                item.getStatus() == null ||
+                item.getSnippet() == null;
     }
 
     // 영상의 상제정보의 유효성 체크, 영상목록이 없으면 true , 영상목록이 있으면 false
@@ -385,7 +419,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         }
     }
 
-
     // 유튜브 영상의 상세정보를 반환한다
     private VideoListResponse getVideoDetail(String videoId){
         log.debug(String.format("\n========= getVideoDetail 파라미터 : %s", videoId));
@@ -401,45 +434,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 
      /* public DateTime getDateTimeTest(){
         return DateTime.parseRfc3339(String.format("%d-01-01T00:00:00Z",LocalDateTime.now().getYear()));
-    }*/
-
-    /*getYoutubePlayListDTO 메서드로 대체하여 필요없으므로 주석처리
-    @Override
-    public SearchListResponse getYoutubePlayList(String keyword) {
-        SearchListResponse response = null;
-        try {
-            YouTube youtube = getYoutubeObject();
-            YouTube.Search.List request = youtube.search().list("id,snippet");
-            request.setQ(keyword)
-            .setKey(m_apiConfig.getYoutubeKey())
-            .setType("playlist")
-            .setMaxResults(50L)
-            //.setOrder("date")
-            .setPublishedAfter(DateTime.parseRfc3339("2022-01-01T00:00:00Z")) // The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
-            .setFields("items(id/kind,id/playlistId,snippet/channelId,snippet/thumbnails/high/url,snippet/thumbnails/medium/url,snippet/thumbnails/default/url,snippet/title,snippet/publishedAt,snippet/description,snippet/channelTitle),nextPageToken,pageInfo");
-
-            response = request.execute();
-
-        } catch (IOException | GeneralSecurityException e) {
-            throw new LilacYoutubeAPIException("유튜브 재생목록 키워드검색 도중 예외 발생", e, keyword);
-        }
-        return response;
-    }*/
-
-    /*getVideoDTOListByPlayListId 메서드로 대체 하므로 주석처리
-    public PlaylistItemListResponse getVideoListByPlayListId(String playListId){
-        PlaylistItemListResponse result = null;
-        try {
-            YouTube youtubeObj = getYoutubeObject();
-            YouTube.PlaylistItems.List request = youtubeObj.playlistItems().list("id,snippet,contentDetails,status");
-            result = request.setMaxResults(5L)
-                        .setPlaylistId(playListId)
-                        .setKey(m_apiConfig.getYoutubeKey())
-                        .execute();
-        } catch (IOException | GeneralSecurityException e) {
-            throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, playListId);
-        }
-        return result;
     }*/
 
     private String getTestSubjectListStr(){

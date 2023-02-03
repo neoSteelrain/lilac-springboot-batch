@@ -14,7 +14,7 @@ public interface IYoutubeClient {
     //SearchListResponse getYoutubePlayList(String keyword);
 
     //List<YoutubePlayListDTO> getYoutubePlayListDTO(String keyword);
-    Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken);
+    Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken, String[] exclusiveChannels);
     //PlaylistItemListResponse getVideoListByPlayListId(String playListId);
     List<YoutubeVideoDTO> getVideoDTOListByPlayListId(String playListId);
     List<YoutubeCommentDTO> getCommentList(String videoId) throws LilacYoutubeAPIException;

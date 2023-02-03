@@ -19,6 +19,9 @@ public class APIConfiguration {
     @Value("${sentiment.comment.count}")
     private String m_commentCount;
 
+    @Value("${playlist.fetch.size}")
+    private String m_playlistFetchSize;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
         return new PropertySourcesPlaceholderConfigurer();
@@ -26,6 +29,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount);
+        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize);
     }
 }

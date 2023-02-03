@@ -32,6 +32,7 @@ public class YoutubeVideoDTO {
     private String duration;
     private Float score;
     private Float magnitude;
+    private Boolean commentDisabled;
 
     private List<YoutubeCommentDTO> comments;
 }

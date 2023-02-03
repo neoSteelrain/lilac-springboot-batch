@@ -4,7 +4,6 @@ import com.steelrain.lilac.batch.as.ISentimentClient;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.*;
 import com.steelrain.lilac.batch.exception.LilacYoutubeAPIException;
-import com.steelrain.lilac.batch.exception.LilacYoutubeDomainException;
 import com.steelrain.lilac.batch.repository.IYoutubeRepository;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
 import com.steelrain.lilac.batch.youtube.YoutubeDataV3Client;
@@ -58,87 +57,6 @@ public class YoutubeManager {
         this.m_channelManager = channelManager;
     }
 
-
-    /*public void dispatchYoutube(){
-        List<KeywordSubjectDTO> subjectList = getSubjectList();
-        List<KeywordLicenseDTO> licenseList = getLicenseList();
-
-        // 정보처리기사만 가지고 작업
-        String keyword = "정보처리기사";
-        IYoutubeClient youtubeClient = new YoutubeDataV3Client(m_apiConfig);
-        SearchListResponse youtubeResponse = youtubeClient.getYoutubePlayList(keyword);
-        //youtubeResponse.getItems().get(1).getId().getPlaylistId()
-        List<SearchResult> items = youtubeResponse.getItems();
-        for(SearchResult item : items){
-            if(item.isEmpty()){
-                continue;
-            }
-
-            YoutubePlayListDTO playListDTO = YoutubePlayListDTO.convertToYoutubePlayListDTO(item);
-
-            String playListId = item.getId().getPlaylistId();
-            if(!StringUtils.hasText(playListId)){
-                continue;
-            }
-
-            // 재생목록에 있는 모든 영상을 가져온다.
-
-        }
-    }*/
-
-//    @Transactional
-//    public void doYoutubeBatch(){
-//        List<KeywordSubjectDTO> subjectList = getSubjectList();
-//        List<KeywordLicenseDTO> licenseList = getLicenseList();
-//
-//        // "정보처리기사" 키워드로 테스트
-//        String keyword = "정보처리기사";
-//        List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO(keyword);
-//
-//        // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
-//        YoutubeChannelDTO channelDTO = null;
-//        if(playLists != null && playLists.size() >= 1){
-//            channelDTO = m_youtubeClient.getChannelInfo(playLists.get(0).getChannelId());
-//        }else{
-//            return;
-//        }
-//        m_youtubeRepository.saveChannelInfo(channelDTO);
-//        Iterator<YoutubePlayListDTO> iter = playLists.iterator();
-//        while(iter.hasNext()){
-//           // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
-//           // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
-//            YoutubePlayListDTO playlist = iter.next();
-//            List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
-//            if(!hasPositiveCommentAndLinkComments(videos)){
-//                iter.remove();
-//                continue;
-//            }
-//            playlist.setItemCount(videos.size());
-//            playlist.setVideos(videos);
-//            playlist.setChannelIdFk(channelDTO.getId());
-//        }
-//        m_youtubeRepository.savePlayList(playLists);
-//        for(YoutubePlayListDTO playlistDTO : playLists){
-//            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
-//                video.setYoutubePlaylistId(playlistDTO.getId());
-//                video.setChannelId(channelDTO.getId());
-//            }
-//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
-//            m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
-//            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
-//            saveCommentList(playlistDTO.getVideos());
-//
-////            for(YoutubeVideoDTO video : playlistDTO.getVideos()){
-////                log.debug("\n 댓글목록 저장전 videoDTO 정보 : " + video.toString());
-////                for(YoutubeCommentDTO dto : video.getComments()) { //
-////                    log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + dto.toString());
-////                    dto.setYoutubeId(video.getId());
-////                }
-////                m_youtubeRepository.saveCommentList(video.getComments());
-////            }
-//        }
-//    }
-
     @Transactional
     public void doYoutubeBatch(){
         //doSubjectBatch();
@@ -148,49 +66,46 @@ public class YoutubeManager {
     private void doLicenseBatch() {
         List<KeywordLicenseDTO> licenseList = m_keywordManager.getLicenseList();
         for (KeywordLicenseDTO licenseDTO : licenseList) {
-            String pageToken = fetchYoutubeData(licenseDTO.getKeyWord(), licenseDTO.getPageToken());
+            // TODO : '길벗시나공 IT' 채널은 일단 제외 시킨다. 영상이 너무 많아서 할당량을 혼자 다 써버린다. channelId = UCPb3m8raQQATP-nlPwDRRXA
+            String nextPageToken = fetchYoutubeData(licenseDTO.getKeyWord(), licenseDTO.getPageToken(), new String[]{"UCPb3m8raQQATP-nlPwDRRXA"});
             LicenseBatchResultDTO batchResultDTO = LicenseBatchResultDTO.builder()
                     .id(licenseDTO.getId())
-                    .pageToken(licenseDTO.getPageToken())
+                    .pageToken(nextPageToken)
                     .build();
-            m_keywordManager.udpateLicensePageToken(batchResultDTO);
+            m_keywordManager.updateLicensePageToken(batchResultDTO);
         }
     }
 
-    private void doSubjectBatch(){
-        List<KeywordSubjectDTO> subjectList = m_keywordManager.getSubjectList();
-        for (KeywordSubjectDTO subjectDTO : subjectList){
-            String pageToken = fetchYoutubeData(subjectDTO.getKeyWord(), subjectDTO.getPageToken());
-            SubjectBatchResultDTO batchResultDTO = SubjectBatchResultDTO.builder()
-                    .id(subjectDTO.getId())
-                    .pageToken(pageToken)
-                    .build();
-            m_keywordManager.updateSubjectPageToken(batchResultDTO);
-        }
-    }
+//    private void doSubjectBatch(){
+//        List<KeywordSubjectDTO> subjectList = m_keywordManager.getSubjectList();
+//        for (KeywordSubjectDTO subjectDTO : subjectList){
+//            String pageToken = fetchYoutubeData(subjectDTO.getKeyWord(), subjectDTO.getPageToken());
+//            SubjectBatchResultDTO batchResultDTO = SubjectBatchResultDTO.builder()
+//                    .id(subjectDTO.getId())
+//                    .pageToken(pageToken)
+//                    .build();
+//            m_keywordManager.updateSubjectPageToken(batchResultDTO);
+//        }
+//    }
 
     /*
         keyword : 검색어
         paramToken : 유튜브 API 전달할 페이지토큰
      */
-    private String fetchYoutubeData(String keyword, String paramToken){
+    private String fetchYoutubeData(String keyword, String paramToken, String[] exclusiveChannels){
         log.debug(String.format("\n==================== 키워드로 유튜브데이터 받아오기 시작, 키워드 : %s =========================", keyword));
         // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
-        Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken);
+        Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken, exclusiveChannels);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PLAY_LIST);
 
-        String pageToken = (String) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PAGE_TOKEN);
-        m_channelManager.initManager(playLists); // 재생목록에 있는 채널들의 정보를 초기화 한다
+        String nextPageToken = (String) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PAGE_TOKEN);
+        m_channelManager.initManager(playLists); // 재생목록에 있는 채널들의 정보를 초기화하고 재생목록의 DB 채널 id를 업데이트 해준다
 
         Iterator<YoutubePlayListDTO> iter = playLists.iterator();
         while(iter.hasNext()){
             // - 재생목록에 있는 모든 영상을 가져오고 감정분석으로 걸러낸다.
             // - 부정적인 댓글을 가진 영상이 있는 재생목록은 삭제한다.
             YoutubePlayListDTO playlist = iter.next();
-            // TODO : 영상이 너무 많아서 테스트 할때는 빼자
-//            if(playlist.getTitle().contains("시나공")){
-//                continue;
-//            }
             List<YoutubeVideoDTO> videos = m_youtubeClient.getVideoDTOListByPlayListId(playlist.playListId);
             if(!hasPositiveCommentAndLinkComments(videos)){
                 iter.remove();
@@ -198,13 +113,11 @@ public class YoutubeManager {
             }
             playlist.setItemCount(videos.size());
             playlist.setVideos(videos);
-            Optional<Long> chnId = m_channelManager.getId(playlist.getChannelIdOrigin());
-            playlist.setChannelId(chnId.orElse(null));
         }
-
+        // TODO : 테스트용 코드
         playLists.stream().forEach(dto -> {
-            log.debug("\n============ insert 전 채널정보 ===========");
-            log.debug(String.format("\n============ 채널정보 : %s", dto.toString()));
+            log.debug("\n============ insert 전 재생목록 ===========");
+            log.debug(String.format("\n============ 재생목록 정보 : %s", dto.toString()));
         });
 
         m_youtubeRepository.savePlayList(playLists);
@@ -218,14 +131,14 @@ public class YoutubeManager {
             log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
             saveCommentList(playlistDTO.getVideos());
         }
-        return pageToken;
+        return nextPageToken;
     }
 
     private void saveCommentList(List<YoutubeVideoDTO> videos){
         for(YoutubeVideoDTO videoDTO : videos){
-            log.debug("\n 댓글목록 저장전 videoDTO.getComments : " + videoDTO.getComments());
+            log.debug("\n======= 댓글목록 저장전 videoDTO.getComments : " + videoDTO.getComments());
             for(YoutubeCommentDTO commentDTO : videoDTO.getComments()){
-                log.debug("\n 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
+                log.debug("\n======== 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
                 commentDTO.setYoutubeId(videoDTO.getId());
             }
             m_youtubeRepository.saveCommentList(videoDTO.getComments());
