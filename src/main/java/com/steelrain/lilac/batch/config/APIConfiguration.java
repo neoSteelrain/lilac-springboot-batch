@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 @Configuration
-@PropertySource("classpath:api-keys.properties")
+@PropertySources({
+        @PropertySource("classpath:/api-keys.properties"),
+        @PropertySource("classpath:/api-option.properties")
+})
 public class APIConfiguration {
 
     @Value("${youtube.api.key}")
@@ -22,6 +26,9 @@ public class APIConfiguration {
     @Value("${playlist.fetch.size}")
     private String m_playlistFetchSize;
 
+    @Value("${exclusive.channels}")
+    private String m_exclusiveChannels;
+
     @Bean
     public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
         return new PropertySourcesPlaceholderConfigurer();
@@ -29,6 +36,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize);
+        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize, m_exclusiveChannels);
     }
 }

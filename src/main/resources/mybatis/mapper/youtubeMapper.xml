@@ -19,7 +19,7 @@
     </insert>
 
     <insert id="insertYoutubePlaylist" useGeneratedKeys="true" keyProperty="id" parameterType="PlayListDTO">
-        INSERT INTO tbl_youtube_playlist(playlist_id,channel_id,title,publish_date,thumbnail_medium,thumbnail_high,item_count) VALUES
+        INSERT IGNORE INTO tbl_youtube_playlist(playlist_id,channel_id,title,publish_date,thumbnail_medium,thumbnail_high,item_count) VALUES
         <foreach item="item" collection="list" separator=",">
             (#{item.playListId},#{item.channelId},#{item.title},#{item.publishDate},#{item.thumbnailMedium},#{item.thumbnailHigh},#{item.itemCount})
         </foreach>

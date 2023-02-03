@@ -66,8 +66,7 @@ public class YoutubeManager {
     private void doLicenseBatch() {
         List<KeywordLicenseDTO> licenseList = m_keywordManager.getLicenseList();
         for (KeywordLicenseDTO licenseDTO : licenseList) {
-            // TODO : '길벗시나공 IT' 채널은 일단 제외 시킨다. 영상이 너무 많아서 할당량을 혼자 다 써버린다. channelId = UCPb3m8raQQATP-nlPwDRRXA
-            String nextPageToken = fetchYoutubeData(licenseDTO.getKeyWord(), licenseDTO.getPageToken(), new String[]{"UCPb3m8raQQATP-nlPwDRRXA"});
+            String nextPageToken = fetchYoutubeData(licenseDTO.getKeyWord(), licenseDTO.getPageToken(), m_apiConfig.getExclusiveChannels());
             LicenseBatchResultDTO batchResultDTO = LicenseBatchResultDTO.builder()
                     .id(licenseDTO.getId())
                     .pageToken(nextPageToken)
@@ -126,9 +125,9 @@ public class YoutubeManager {
                 video.setYoutubePlaylistId(playlistDTO.getId());
                 video.setChannelId(playlistDTO.getChannelId());
             }
-            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
+            //log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 시작 ==========================================", playlistDTO.playListId));
             m_youtubeRepository.saveVideoList(playlistDTO.getVideos());
-            log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
+            //log.debug( String.format("\n============== playlist id :  %s  ================= video list insert 끝 ==========================================", playlistDTO.playListId));
             saveCommentList(playlistDTO.getVideos());
         }
         return nextPageToken;
@@ -136,9 +135,9 @@ public class YoutubeManager {
 
     private void saveCommentList(List<YoutubeVideoDTO> videos){
         for(YoutubeVideoDTO videoDTO : videos){
-            log.debug("\n======= 댓글목록 저장전 videoDTO.getComments : " + videoDTO.getComments());
+            //log.debug("\n======= 댓글목록 저장전 videoDTO.getComments : " + videoDTO.getComments());
             for(YoutubeCommentDTO commentDTO : videoDTO.getComments()){
-                log.debug("\n======== 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
+                //log.debug("\n======== 댓글목록 저장전 commentDTO 정보 : " + commentDTO.toString());
                 commentDTO.setYoutubeId(videoDTO.getId());
             }
             m_youtubeRepository.saveCommentList(videoDTO.getComments());

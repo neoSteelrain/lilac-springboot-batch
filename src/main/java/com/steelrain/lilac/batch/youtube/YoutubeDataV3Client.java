@@ -79,7 +79,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
 //            String tmp = getTmpLicenseString();
 //            String tmp = getTestSubjectListStr();
 //            apiResponse = JacksonFactory.getDefaultInstance().fromString(tmp, SearchListResponse.class); // 테스트용 재생목록 객체를 얻기 위한 역직렬화
-
+// PL6i7rGeEmTvqEjTJF3PJR4a1N9KTPpfw0
             // 실제 코드
             YouTube.Search.List request = YOUTUBE.search().list("id,snippet");
             request.setQ(keyword)
@@ -91,6 +91,12 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     .setPublishedAfter(DateTime.parseRfc3339("2022-01-01T00:00:00Z")) // The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
                     .setFields("items(id/kind,id/playlistId,snippet/channelId,snippet/thumbnails/high/url,snippet/thumbnails/medium/url,snippet/thumbnails/default/url,snippet/title,snippet/publishedAt,snippet/description,snippet/channelTitle),nextPageToken,pageInfo");
             apiResponse = request.execute();
+
+            String keywordResStr = JSON_FACTORY.toString(apiResponse);
+            log.debug("\n======== 키워드 검색 결과 json 시작 ==========\n");
+            log.debug(keywordResStr);
+            log.debug("\n======== 키워드 검색 결과 json 끝 ==========");
+
 
             if(apiResponse == null || (apiResponse != null && apiResponse.getItems().size() == 0)){
                 Map<String, Object> nullResponseResult = new HashMap<>(2);

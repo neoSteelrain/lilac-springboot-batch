@@ -19,9 +19,6 @@ mybatis:
 logging:
   file:
     path: C:\lilac-batch-log
-    max-size: 500MB
-    max-history: 10
-    name: batch.log
   level:
     root: info
     com.steelrain.lilac.batch: debug

@@ -4,6 +4,7 @@ import com.steelrain.lilac.batch.datamodel.KeywordLicenseDTO;
 import com.steelrain.lilac.batch.datamodel.KeywordSubjectDTO;
 import com.steelrain.lilac.batch.datamodel.SubjectBatchResultDTO;
 import com.steelrain.lilac.batch.mapper.KeywordMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
 
+@Slf4j
 @SpringBootTest
 public class MapperTests {
 
@@ -26,11 +28,11 @@ public class MapperTests {
 
         System.out.println("====================================");
         list.stream().forEach(subject -> {
-            System.out.println(subject.getId());
-            System.out.println(subject.getName());
-            System.out.println(subject.getKeyWord());
-            System.out.println(subject.getPageToken());
-            System.out.println(subject.getUpdateTime());
+            log.debug(subject.getId().toString());
+            log.debug(subject.getName());
+            log.debug(subject.getKeyWord());
+            log.debug(subject.getPageToken());
+            log.debug(subject.getUpdateTime().toString());
 
         });
         System.out.println("====================================");
