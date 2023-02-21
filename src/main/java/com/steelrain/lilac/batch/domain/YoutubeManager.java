@@ -206,7 +206,7 @@ public class YoutubeManager {
         log.debug("comments.size() : " + comments.size());
         log.debug("assembledComment : " + assembledComment);
 
-        SentimentDTO sentimentDTO = m_sentimentClient.analyizeComment(assembledComment);
+        SentimentDTO sentimentDTO = m_sentimentClient.analyzeComment(assembledComment);
 
         log.debug("감정분석 결과 : " + sentimentDTO.toString());
 

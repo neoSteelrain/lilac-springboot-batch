@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 public class GoogleASClient implements ISentimentClient {
 
     @Override
-    public SentimentDTO analyizeComment(String str) {
+    public SentimentDTO analyzeComment(String str) {
         if(StringUtils.hasText(str) && (str.getBytes(StandardCharsets.UTF_8).length >= 1000 )){
             return null;
         }

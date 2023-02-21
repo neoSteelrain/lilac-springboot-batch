@@ -65,7 +65,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
      */
     @Override
     public Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken, String[] exclusiveChannels) {
-        // 페지지토큰은 따로 검사를 하지 않는다. null 이면 첫페이지 null 이 아니면 다음페이지가 있는것
+        // 페이지토큰은 따로 검사를 하지 않는다. null 이면 첫페이지 null 이 아니면 다음페이지가 있는것
         if(!StringUtils.hasText(keyword)){
             Map<String, Object> nullKeywordResult = new HashMap<>(2);
             nullKeywordResult.put(YoutubePlayListMapKey.PLAY_LIST, new ArrayList(0));
@@ -144,17 +144,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         }
         return removedCnt;
     }
-/*
-    private Long id;
-    public String playListId;
-    private Long channelId; // 채널 테이블 FK
-    private String title;
-    private Timestamp publishDate;
-    private String thumbnailMedium;
-    private String thumbnailHigh;
-    private Integer itemCount;
-    private String channelIdOrigin; // API응답에서 반환된 채널ID 문자열
- */
+
     private YoutubePlayListDTO convertToYoutubePlayListDTO(SearchResult sr){
         YoutubePlayListDTO dto = new YoutubePlayListDTO();
         dto.setPlayListId(sr.getId().getPlaylistId());
@@ -179,7 +169,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         // 재생목록에 중복된 영상이 들어갈 수 있므로 Map에 저장했다가 밸류값들만 List로 리턴한다
         Map<String, YoutubeVideoDTO> videoMap = null;
         String pageToken = null;
-        boolean isExit = true;
+        boolean isRun = true;
         int cnt = 0;
         int pageCnt = 0;
         // 영상의 상세정보 API의 파라미터로 넘길 "videoId,videoId,videoId..." 문자열을 만들어야 한다
@@ -233,10 +223,10 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                 if(cnt < pageCnt){ // 페이징을 해야할지 안할지 체크해서 페이지가 남아있으면 페이징토큰을 얻어오고 아니면 1번만 돌고 종료
                     pageToken = plResponse.getNextPageToken();
                 }else{
-                    isExit = false;
+                    isRun = false;
                 }
                 ++cnt;
-            } while(isExit);
+            } while(isRun);
         } catch (IOException e) {
             log.error(String.format("유튜브 재생목록의 영상조회 도중 예외 발생 - playListId : %s", playListId), e);
             //throw new LilacYoutubeAPIException("유튜브 재생목록의 영상조회 도중 예외 발생", e, playListId);

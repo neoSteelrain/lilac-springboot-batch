@@ -9,18 +9,19 @@ import java.nio.charset.StandardCharsets;
  */
 @Component
 public class CommentByteCounter {
-    
+
+    private final static int BUFFER_SIZE = 1000;
     // 스트링빌더에 저장된 댓글들의 바이트수를 저장하는 변수
     private int m_totalByteCount;
     
     // 댓글을 저장하는 버퍼
-    private static StringBuilder m_sb = new StringBuilder(1000);
+    private static StringBuilder m_sb = new StringBuilder(BUFFER_SIZE);
 
 
     // 문자열을 내부 버퍼에 합친다.
     public int addComment(String comment){
         int commentBytes = comment.getBytes(StandardCharsets.UTF_8).length;
-        if( (1000 - m_totalByteCount) > commentBytes ){
+        if( (BUFFER_SIZE - m_totalByteCount) > commentBytes ){
             m_totalByteCount += commentBytes;
             m_sb.append(comment);
         }
@@ -42,11 +43,11 @@ public class CommentByteCounter {
     // 댓글을 추가할 수 있는지 검사한다.
     public boolean isAddable(String comment){
         int commentBytes = comment.getBytes(StandardCharsets.UTF_8).length;
-        return (1000 - m_totalByteCount) > commentBytes;
+        return (BUFFER_SIZE - m_totalByteCount) > commentBytes;
     }
 
     // 내부버퍼에 추가가능한 바이트수를 리턴
     public int getRemainder(){
-        return 1000 - m_totalByteCount;
+        return BUFFER_SIZE - m_totalByteCount;
     }
 }

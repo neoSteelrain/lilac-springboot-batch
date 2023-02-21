@@ -12,7 +12,7 @@ public class GoogleASClienttests {
     @Test
     public void testAnalyizeComment(){
         ISentimentClient client = new GoogleASClient();
-        SentimentDTO res = client.analyizeComment("야이 이딴 거지같은 프로그램짜고 부끄럽지도 않냐 다 때려치워라");
+        SentimentDTO res = client.analyzeComment("야이 이딴 거지같은 프로그램짜고 부끄럽지도 않냐 다 때려치워라");
         assertThat( res != null);
         System.out.printf("res : socre = %f , magnitude = %f \n", res.getScore(), res.getMagnitude());
     }
