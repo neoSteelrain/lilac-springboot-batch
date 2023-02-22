@@ -44,3 +44,8 @@
 Spring batch 를 사용하여 구현하였습니다.
 
 1 개의 Job, 3개의 Step, 1개의 Tasklet 으로 구성되어 있습니다.
+- 유튜브 Data v3 API, 구글감정 분석 API 를 사용하였습니다.
+
+### ERD
+![lilac-boot-erd](https://user-images.githubusercontent.com/113125088/220605834-08709c93-ab79-4faa-903c-27eeae9134ad.png)
+
