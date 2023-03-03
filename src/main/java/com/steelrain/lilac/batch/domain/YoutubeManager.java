@@ -180,11 +180,11 @@ public class YoutubeManager {
             List<YoutubeCommentDTO> comments = null;
             try{
                 comments = m_youtubeClient.getCommentList(video.getVideoId());
-//                if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴 . 감정분석 API 할당량 때문에 테스트할때는 주석처리한다
-//                    return false;
-//                }
+                if(!analyzeComment(comments, video)){ // 부정적인 댓글이 있다면 즉시 false 리턴 . 감정분석 API 할당량 때문에 테스트할때는 주석처리한다
+                    return false;
+                }
             }catch(LilacYoutubeAPIException le){
-                log.error("댓글 감정분석중 예외 발생 : 예외가 발생한 video id = " + video.getVideoId(), le);
+                log.error("댓글 감정분석중 예외 발생 : 예외가 발생한 video id = {}, 예외정보 : {}", video.getVideoId(), le);
                 video.setComments(new ArrayList<>(0));
                 continue;
             }

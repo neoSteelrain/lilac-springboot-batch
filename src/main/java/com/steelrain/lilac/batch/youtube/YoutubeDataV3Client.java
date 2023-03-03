@@ -133,8 +133,9 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         Iterator<SearchResult> iterator = originList.iterator();
         int removedCnt = 0;
         while(iterator.hasNext()){
+            SearchResult sr = iterator.next();
             for (String channel : channels){
-                SearchResult sr = iterator.next();
+//                SearchResult sr = iterator.next();
                 if(channel.equals(sr.getSnippet().getChannelId())){
                     log.debug(String.format("삭제할 채널 id : %s , 이름 : %s", sr.getSnippet().getChannelId(), sr.getSnippet().getChannelTitle()));
                     iterator.remove();
@@ -176,7 +177,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         StringBuilder videoIdBuilder = new StringBuilder(600); // 유튜브 video id 개수 * API 처리가능 ID 개수 + 콤마의 개수 == 11 * 50 + 49 , 넉넉하게 600으로 잡는다...
         try {
             do{
-                //YouTube.PlaylistItems.List plRequest = YOUTUBE.playlistItems().list("id,snippet,contentDetails,status");
                 YouTube.PlaylistItems.List plRequest = YOUTUBE.playlistItems().list("id,snippet,status"); // 따로 상세정보 조회를 하기때문에 contentDetails 는 필요없음
                 PlaylistItemListResponse plResponse = plRequest.setMaxResults(50L) // 한번에 최대 50개 까지만 지원
                         .setPlaylistId(playListId)
@@ -385,8 +385,10 @@ public class YoutubeDataV3Client implements IYoutubeClient{
             }).setApplicationName("lilac").build();
         }catch(GeneralSecurityException gse){
             log.error("YouTube 객체 초기화 도중 예외 발생 : {}", gse);
+            throw new LilacYoutubeAPIException(String.format("YouTube 객체 초기화 도중 예외 발생, %s", gse.getMessage()));
         }catch (IOException ioe){
             log.error("YouTube 객체 초기화 도중 예외 발생 : {}", ioe);
+            throw new LilacYoutubeAPIException(String.format("YouTube 객체 초기화 도중 예외 발생, %s", ioe.getMessage()));
         }
     }
 
