@@ -135,7 +135,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         while(iterator.hasNext()){
             SearchResult sr = iterator.next();
             for (String channel : channels){
-//                SearchResult sr = iterator.next();
                 if(channel.equals(sr.getSnippet().getChannelId())){
                     log.debug(String.format("삭제할 채널 id : %s , 이름 : %s", sr.getSnippet().getChannelId(), sr.getSnippet().getChannelTitle()));
                     iterator.remove();
