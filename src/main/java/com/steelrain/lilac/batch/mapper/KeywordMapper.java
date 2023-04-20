@@ -19,6 +19,7 @@ public interface KeywordMapper {
     @Select("SELECT id,name,key_word,page_token,update_time FROM tbl_subject WHERE is_active=1")
     @Results(id="KeywordSubjectMap", value={
             @Result(property = "id", column = "id"),
+            @Result(property = "code", column = "code"),
             @Result(property = "name", column = "name"),
             @Result(property = "keyWord", column = "key_word"),
             @Result(property = "pageToken", column = "page_token"),

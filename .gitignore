@@ -262,3 +262,5 @@ gradle-app.setting
 # End of https://www.toptal.com/developers/gitignore/api/windows,intellij,gradle,java,eclipse
 *.idea
 /src/main/resources/api-keys.properties
+/src/main/resources/application-dev.yml
+/src/main/resources/application-aws.yml

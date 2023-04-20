@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 public class APIConfig {
     private String youtubeKey;
 
+    private Boolean sentimentActive;
     // 감정분석의 긍정점수(score)값의 임계치
     private Float threshold;
     private Long commentCount;
@@ -17,8 +18,9 @@ public class APIConfig {
     private DateTime searchPublishDate;
 
 
-    public APIConfig(String youtubeKey, String threshold, String commentCount, String playlistFetchSize, String exclusiveChannels, String searchPublishDate){
+    public APIConfig(String youtubeKey, Boolean sentimentActive, String threshold, String commentCount, String playlistFetchSize, String exclusiveChannels, String searchPublishDate){
         this.youtubeKey = youtubeKey;
+        this.sentimentActive = sentimentActive;
         this.threshold = Float.valueOf(threshold).floatValue();
         this.commentCount = Long.valueOf(commentCount);
         this.playlistFetchSize = Long.valueOf(playlistFetchSize);

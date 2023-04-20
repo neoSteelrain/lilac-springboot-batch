@@ -39,24 +39,24 @@ public class YoutubeChannelManager {
        - 채널정보를 DB에 저장하고 id PK 값을 얻는다
        - DB에서 가져온 id PK값을 재생목록의 채널id FK로 설정해준다
      */
-    public void initManager(List<YoutubePlayListDTO> playLists){
+    public void initPlayList(List<YoutubePlayListDTO> playLists){
         try{
-            for(YoutubePlayListDTO dto : playLists){
-                if(m_chnDTOMap.containsKey(dto.getChannelIdOrigin())){
-                    dto.setChannelId( m_chnDTOMap.get( dto.getChannelIdOrigin() ).getId() );
+            for(YoutubePlayListDTO pl : playLists){
+                if(m_chnDTOMap.containsKey(pl.getChannelIdOrigin())){
+                    pl.setChannelId( m_chnDTOMap.get( pl.getChannelIdOrigin() ).getId() );
                 }else{
-                    Optional<YoutubeChannelDTO> channelDTO = m_youtubeClient.getChannelInfo(dto.getChannelIdOrigin());
+                    Optional<YoutubeChannelDTO> channelDTO = m_youtubeClient.getChannelInfo(pl.getChannelIdOrigin());
                     if(!channelDTO.isPresent()){
-                        continue;
+                        throw new IllegalArgumentException(String.format("채널정보를 유튜브 API를 통해 불러올 수 없음 : 채널 ID - %s", pl.getChannelIdOrigin()));
                     }
                     YoutubeChannelDTO originChnDTO = channelDTO.get();
                     m_youtubeRepository.saveChannel(originChnDTO);
-                    dto.setChannelId(originChnDTO.getId());
-                    m_chnDTOMap.put(dto.getChannelIdOrigin(), originChnDTO);
+                    pl.setChannelId(originChnDTO.getId());
+                    m_chnDTOMap.put(pl.getChannelIdOrigin(), originChnDTO);
                 }
             }
         }catch(LilacBatchException be){
-            throw new LilacYoutubeDomainException(String.format("채널관리자 초기화중 예외 발생"), be);
+            throw new LilacYoutubeDomainException(String.format("재생목록에 채널ID설정 중 예외 발생, 재생목록정보 - %s", playLists.toString()), be);
         }
     }
 

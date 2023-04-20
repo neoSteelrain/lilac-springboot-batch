@@ -5,7 +5,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.youtube.model.*;
 import com.steelrain.lilac.batch.config.APIConfig;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
-import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,24 +38,7 @@ public class YoutubeTests {
         //searchListResponseToJsonFile(res);
     }
 
-    @Test
-    public void testFormattedVideoIdString(){
-        List<String> videoIds = new ArrayList<>(5);
-        videoIds.add("test");
-        videoIds.add("test");
-        videoIds.add("test");
-        videoIds.add("test");
-        videoIds.add("test");
-        StringBuilder videoIdBuilder = new StringBuilder(600);
-        for(int i=0, size=videoIds.size() -1 ; i <= size ; i++){
-            videoIdBuilder.append(videoIds.get(i));
-            if(i == size){
-                continue;
-            }
-            videoIdBuilder.append(",");
-        } // 영상의 상세정보를 얻기 위한 파라미터 만들기 끝
-        System.out.println("문자열 결과 : " +videoIdBuilder.toString());
-    }
+
 
     /*@Test
     public void testGetYoutubePlayListByMock(){

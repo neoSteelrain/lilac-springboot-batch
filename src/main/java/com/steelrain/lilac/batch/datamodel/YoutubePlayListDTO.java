@@ -32,5 +32,8 @@ reg_date	datetime	YES
     private Integer itemCount;
     private String channelIdOrigin; // API응답에서 반환된 채널ID 문자열
 
+    private Integer licenseId;
+    private Integer subjectId;
+
     private List<YoutubeVideoDTO> videos;
 }

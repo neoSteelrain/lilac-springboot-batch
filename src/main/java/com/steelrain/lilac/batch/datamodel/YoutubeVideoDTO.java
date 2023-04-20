@@ -33,6 +33,7 @@ public class YoutubeVideoDTO {
     private Float score;
     private Float magnitude;
     private Boolean commentDisabled;
+    private Long position;
 
     private List<YoutubeCommentDTO> comments;
 }

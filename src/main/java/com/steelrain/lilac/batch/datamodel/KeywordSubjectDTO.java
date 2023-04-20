@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 public class KeywordSubjectDTO {
 
     private Integer id;
+    private Integer code;
     private String name;
     private String keyWord;
     private String pageToken;

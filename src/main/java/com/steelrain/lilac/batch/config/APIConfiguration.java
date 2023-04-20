@@ -17,6 +17,9 @@ public class APIConfiguration {
     @Value("${youtube.api.key}")
     private String m_youtubeKey;
 
+    @Value("${sentiment.active}")
+    private Boolean m_sentimentActive;
+
     @Value("${sentiment.threshold}")
     private String m_threshold;
 
@@ -39,6 +42,6 @@ public class APIConfiguration {
 
     @Bean
     APIConfig apiConfig(){
-        return new APIConfig(this.m_youtubeKey, m_threshold, m_commentCount, m_playlistFetchSize, m_exclusiveChannels, m_searchPublishDate);
+        return new APIConfig(this.m_youtubeKey, m_sentimentActive, m_threshold, m_commentCount, m_playlistFetchSize, m_exclusiveChannels, m_searchPublishDate);
     }
 }

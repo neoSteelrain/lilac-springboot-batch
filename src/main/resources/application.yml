@@ -1,11 +1,7 @@
 spring:
-  datasource:
-    # mysql ver8 ??? com.mysql.cj.jdbc.Driver
-    # ?? ??? com.mysql.jdbc.Driver
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/db_lilac_boot?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: user_lilac_boot_dev
-    password: 1234
+  profiles:
+    active: dev
+
   batch:
     jdbc:
       initialize-schema: never
@@ -15,11 +11,4 @@ spring:
 mybatis:
   config-location: classpath:/mybatis/mybatis-config.xml
   mapper-locations: classpath:/mybatis/mapper/**/*.xml
-
-logging:
-  file:
-    path: C:\lilac-batch-log
-  level:
-    root: info
-    com.steelrain.lilac.batch: debug
 
