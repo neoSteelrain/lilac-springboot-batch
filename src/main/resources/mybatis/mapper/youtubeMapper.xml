@@ -53,4 +53,12 @@
             #{item}
         </foreach>
     </select>
+
+    <select id="checkDuplicateVideo" parameterType="VideoDTO" resultType="int">
+        SELECT count(id)
+        FROM tbl_youtube WHERE video_id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item.video_id}
+        </foreach>
+    </select>
 </mapper>

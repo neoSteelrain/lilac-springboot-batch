@@ -8,7 +8,6 @@ import com.steelrain.lilac.batch.mapper.YoutubeMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Youtube API로 데이터를 가져오고, 구글 감정분석 API를 사용해서 필터링한 데이터들을 MyBatis 를 통해 DB에 저장하는 클래스
@@ -58,5 +57,15 @@ public class YoutubeMyBatisRepository implements IYoutubeRepository {
     @Override
     public List<YoutubeChannelDTO> findAllYoutubeChannels() {
         return m_youtubeMapper.findAllYoutubeChannels();
+    }
+
+    @Override
+    public boolean checkDuplicatePl(String plId) {
+        return m_youtubeMapper.checkDuplicatePl(plId) > 0;
+    }
+
+    @Override
+    public int checkDuplicateVideo(List<YoutubeVideoDTO> videos) {
+        return m_youtubeMapper.checkDuplicateVideo(videos);
     }
 }

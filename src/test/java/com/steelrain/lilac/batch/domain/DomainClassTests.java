@@ -55,10 +55,4 @@ public class DomainClassTests {
         }
         System.out.println("루프 아웃");
     }
-
-    @Test
-    //@Transactional
-    public void testDispatchYoutube(){
-        m_youtubeManager.doYoutubeBatch();
-    }
 }

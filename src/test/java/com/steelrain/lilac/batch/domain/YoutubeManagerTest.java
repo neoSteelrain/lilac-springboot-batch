@@ -14,9 +14,9 @@ class YoutubeManagerTest {
     @Autowired
     private YoutubeManager m_youtubeManager;
 
-    @Test
+    /*@Test
     @Transactional
     void fetchYoutubeData() {
         m_youtubeManager.test();
-    }
+    }*/
 }

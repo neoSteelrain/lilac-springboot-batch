@@ -5,8 +5,8 @@ import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
+import com.steelrain.lilac.batch.mapper.YoutubeMapper;
 import com.steelrain.lilac.batch.youtube.IYoutubeClient;
-import io.micrometer.core.annotation.TimedSet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -31,6 +32,7 @@ public class YoutubeMyBatisRepositoryTests {
     private IYoutubeClient m_youtubeClient;
 
     @Test
+    @Transactional
     public void testSavePlayList(){
         List<YoutubePlayListDTO> list = new ArrayList<>();
         YoutubePlayListDTO dto = new YoutubePlayListDTO();
@@ -46,6 +48,32 @@ public class YoutubeMyBatisRepositoryTests {
         int cnt = m_youtubeRepository.savePlayList(list);
 
         assertThat(cnt > 0);
+    }
+
+    @Test
+    @DisplayName("재생목록중복저장 테스트")
+    public void testSaveDuplicatePl(){
+        List<YoutubePlayListDTO> list1 = new ArrayList<>();
+        list1.add(createTestPL());
+        m_youtubeRepository.savePlayList(list1);
+
+        List<YoutubePlayListDTO> list2 = new ArrayList<>();
+        list2.add(createTestPL());
+        m_youtubeRepository.savePlayList(list2);
+
+        assertThat(Objects.isNull(list2.get(0).getId())).isTrue();
+    }
+
+    private YoutubePlayListDTO createTestPL(){
+        YoutubePlayListDTO dto = new YoutubePlayListDTO();
+        dto.setPlayListId("aaaaaaaaaa");
+        dto.setTitle("ttttttttt");
+        dto.setPublishDate(new Timestamp(System.currentTimeMillis()));
+        dto.setThumbnailMedium("mmmmmmmmmmmm");
+        dto.setThumbnailHigh("hhhhhhhhhhhhhhh");
+        dto.setItemCount(100);
+        dto.setChannelId(2L);
+        return dto;
     }
 
     @Test

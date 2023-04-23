@@ -15,4 +15,6 @@ public interface IYoutubeRepository {
     int saveCommentList(List<YoutubeCommentDTO> commentList);
     List<YoutubeChannelDTO> getChannelList(List<String> chnIdList);
     List<YoutubeChannelDTO> findAllYoutubeChannels();
+    boolean checkDuplicatePl(String plId);
+    int checkDuplicateVideo(List<YoutubeVideoDTO> videos);
 }

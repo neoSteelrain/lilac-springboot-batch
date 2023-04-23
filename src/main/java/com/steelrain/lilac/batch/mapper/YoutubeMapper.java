@@ -4,10 +4,7 @@ import com.steelrain.lilac.batch.datamodel.YoutubeChannelDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeCommentDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubePlayListDTO;
 import com.steelrain.lilac.batch.datamodel.YoutubeVideoDTO;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -38,4 +35,9 @@ public interface YoutubeMapper {
         @Result(property = "thumbnailHigh", column = "thumbnail_high")
     })
     List<YoutubeChannelDTO> findAllYoutubeChannels();
+
+    @Select("SELECT count(id) FROM tbl_youtube_playlist WHERE playlist_id={#plId}")
+    int checkDuplicatePl(@Param("plId")String plId);
+
+    int checkDuplicateVideo(List<YoutubeVideoDTO> videos);
 }
