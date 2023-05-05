@@ -1,7 +1,6 @@
 package com.steelrain.lilac.batch.datamodel;
 
 import lombok.*;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.Timestamp;
 
@@ -23,4 +22,5 @@ public class YoutubeChannelDTO {
     private String brandingKeywords;
     private String thumbnailMedium;
     private String thumbnailHigh;
+    private String customUrl;
 }

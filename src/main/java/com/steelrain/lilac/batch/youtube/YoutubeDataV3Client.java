@@ -63,7 +63,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
      * @return 재생목록, 페이지 토큰 Map, YoutubePlayListMapKey 클래스의 상수값을 키로 사용한다
      */
     @Override
-    public Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken, String[] exclusiveChannels) {
+    public Map<String, Object> getYoutubePlayListDTO(String keyword, String paramToken, String[] exclusiveChannels, boolean isLicense) {
         // 페이지토큰은 따로 검사를 하지 않는다. null 이면 첫페이지 null 이 아니면 다음페이지가 있는것
         if(!StringUtils.hasText(keyword)){
             Map<String, Object> nullKeywordResult = new HashMap<>(2);
@@ -88,7 +88,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     .setMaxResults(m_apiConfig.getPlaylistFetchSize())
                     .setPageToken(StringUtils.hasText(paramToken) ? paramToken : null)
                     //.setOrder("date")
-                    .setPublishedAfter(m_apiConfig.getSearchPublishDate())
+                    .setPublishedAfter(isLicense ? m_apiConfig.getSearchPublishDate() : null)
                     //.setPublishedAfter(DateTime.parseRfc3339("2022-01-01T00:00:00Z")) // The value is an RFC 3339 formatted date-time value (1970-01-01T00:00:00Z).
                     .setFields("items(id/kind,id/playlistId,snippet/channelId,snippet/thumbnails/high/url,snippet/thumbnails/medium/url,snippet/thumbnails/default/url,snippet/title,snippet/publishedAt,snippet/description,snippet/channelTitle),nextPageToken,pageInfo");
             apiResponse = request.execute();
@@ -349,7 +349,6 @@ public class YoutubeDataV3Client implements IYoutubeClient{
         if(!StringUtils.hasText(channelId) || YOUTUBE ==null){
             return Optional.empty();
         }
-        // 테스트 채널 id :  UCZD_mSIrG7VC4Im2lOMZMmQ
         YoutubeChannelDTO resultDTO = null;
         try {
             YouTube.Channels.List request = YOUTUBE.channels()
@@ -366,6 +365,7 @@ public class YoutubeDataV3Client implements IYoutubeClient{
                     .brandingKeywords(response.getItems().get(0).getBrandingSettings().getChannel().getKeywords())
                     .thumbnailMedium(response.getItems().get(0).getSnippet().getThumbnails().getMedium().getUrl())
                     .thumbnailHigh(response.getItems().get(0).getSnippet().getThumbnails().getHigh().getUrl())
+                    .customUrl((response.getItems().get(0).getSnippet().getCustomUrl()))
                     .build();
         } catch (IOException e) {
             throw new LilacYoutubeAPIException("채널 정보 가져오기 예외", e, channelId);

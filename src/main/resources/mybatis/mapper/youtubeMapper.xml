@@ -13,9 +13,9 @@
 
     <insert id="insertYoutubeChannel" useGeneratedKeys="true" keyProperty="id" parameterType="ChannelDTO">
         INSERT IGNORE INTO tbl_youtube_channel(channel_id, title, description, publish_date, view_count,
-                                        subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high) VALUE
+                                        subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high, custom_url) VALUE
             (#{channelId},#{title},#{description},#{publishDate},#{viewCount},
-             #{subscriberCount},#{subscriberCountHidden},#{videoCount},#{brandingKeywords},#{thumbnailMedium},#{thumbnailHigh})
+             #{subscriberCount},#{subscriberCountHidden},#{videoCount},#{brandingKeywords},#{thumbnailMedium},#{thumbnailHigh},#{customUrl})
     </insert>
 
     <insert id="insertYoutubePlaylist" useGeneratedKeys="true" keyProperty="id" parameterType="PlayListDTO">
@@ -58,7 +58,7 @@
         SELECT count(id)
         FROM tbl_youtube WHERE video_id IN
         <foreach collection="list" item="item" open="(" close=")" separator=",">
-            #{item.video_id}
+            #{item.videoId}
         </foreach>
     </select>
 </mapper>

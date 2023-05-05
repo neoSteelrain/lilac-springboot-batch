@@ -18,7 +18,7 @@ public interface YoutubeMapper {
     int insertYoutubeCommentList(List<YoutubeCommentDTO> dto);
     List<YoutubeChannelDTO> selectChannelList(List<String> chnIds);
 
-    @Select("SELECT id,channel_id, title, description, publish_date, view_count,subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high " +
+    @Select("SELECT id,channel_id, title, description, publish_date, view_count,subscriber_count, subscriber_count_hidden, video_count, branding_keywords, thumbnail_medium, thumbnail_high, custom_url " +
             "FROM tbl_youtube_channel")
     @Results(id="findAllYoutubeChannelMap", value={
         @Result(property = "id", column = "id"),
@@ -32,11 +32,12 @@ public interface YoutubeMapper {
         @Result(property = "videoCount", column = "video_count"),
         @Result(property = "brandingKeywords", column = "branding_keywords"),
         @Result(property = "thumbnailMedium", column = "thumbnail_medium"),
-        @Result(property = "thumbnailHigh", column = "thumbnail_high")
+        @Result(property = "thumbnailHigh", column = "thumbnail_high"),
+        @Result(property = "customUrl", column = "custom_url")
     })
     List<YoutubeChannelDTO> findAllYoutubeChannels();
 
-    @Select("SELECT count(id) FROM tbl_youtube_playlist WHERE playlist_id={#plId}")
+    @Select("SELECT count(id) FROM tbl_youtube_playlist WHERE playlist_id=#{plId}")
     int checkDuplicatePl(@Param("plId")String plId);
 
     int checkDuplicateVideo(List<YoutubeVideoDTO> videos);

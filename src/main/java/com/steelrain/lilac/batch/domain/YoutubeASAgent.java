@@ -33,7 +33,8 @@ public class YoutubeASAgent implements IYoutubeAgent{
     public String fetchYoutubeData(String keyword, String paramToken, Integer licenseId, Integer subjectId, String[] exclusiveChannels) {
         log.debug(String.format("\n==================== 키워드로 유튜브데이터 받아오기 시작, 키워드 : %s =========================", keyword));
         // insert 순서 : 채널정보, 재생목록, 유튜브영상목록, 댓글목록
-        Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken, exclusiveChannels);
+        boolean isLicense = Objects.isNull(licenseId);
+        Map<String, Object> resultMap = m_youtubeClient.getYoutubePlayListDTO(keyword, paramToken, exclusiveChannels, isLicense);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) resultMap.get(YoutubeDataV3Client.YoutubePlayListMapKey.PLAY_LIST);
         if(playLists.size() == 0){
             return paramToken;

@@ -157,7 +157,7 @@ public class YoutubeMyBatisRepositoryTests {
     @Test
     @Transactional
     public void testPlayListInsert(){
-        Map<String, Object> tmp = m_youtubeClient.getYoutubePlayListDTO("정보처리기사", null, null);
+        Map<String, Object> tmp = m_youtubeClient.getYoutubePlayListDTO("정보처리기사", null, null, true);
         List<YoutubePlayListDTO> playLists = (List<YoutubePlayListDTO>) tmp.get("RESULT_LIST");
         //List<YoutubePlayListDTO> playLists = m_youtubeClient.getYoutubePlayListDTO("정보처리기사");
 
